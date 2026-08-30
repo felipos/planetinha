@@ -1,0 +1,39 @@
+:root {
+  --color-bg: #05070d;
+  --color-surface: rgba(15, 18, 28, 0.82);
+  --color-border: rgba(255, 255, 255, 0.14);
+  --color-text: #e7e9f0;
+  --color-text-muted: #9aa1b4;
+  --color-accent: #6bb7ff;
+  --color-danger: #ff8b7a;
+  --focus-ring: #6bb7ff;
+
+  font: 16px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: dark light;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

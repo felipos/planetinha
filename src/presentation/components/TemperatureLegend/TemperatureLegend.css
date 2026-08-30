@@ -1,0 +1,35 @@
+.legend {
+  position: absolute;
+  inset-inline: 0.75rem;
+  inset-block-end: 0.75rem;
+  z-index: 2;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(6px);
+}
+
+.legend__bar {
+  height: 0.6rem;
+  border-radius: 999px;
+}
+
+.legend__labels {
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 640px) {
+  .legend {
+    inset-inline: auto;
+    inset-inline-end: 1rem;
+    inset-block-end: 1rem;
+    width: 20rem;
+  }
+}

@@ -1,0 +1,65 @@
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app__header {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 2;
+  padding: 0.75rem 1rem;
+  pointer-events: none;
+}
+
+.app__title {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.app__globe-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.app__top-overlay {
+  position: absolute;
+  inset-block-start: 3.25rem;
+  inset-inline: 0.75rem;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.app__top-overlay > * {
+  pointer-events: auto;
+}
+
+@media (min-width: 640px) {
+  .app__header {
+    padding: 1rem 1.5rem;
+  }
+
+  .app__title {
+    font-size: 1.25rem;
+  }
+
+  .app__top-overlay {
+    inset-inline: 1rem;
+    align-items: flex-end;
+  }
+}

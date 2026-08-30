@@ -1,0 +1,44 @@
+.point-inspector {
+  position: relative;
+  padding: 0.75rem 2.25rem 0.75rem 0.9rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(6px);
+  max-width: 14rem;
+}
+
+.point-inspector__close {
+  position: absolute;
+  inset-block-start: 0.5rem;
+  inset-inline-end: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.point-inspector__close:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.point-inspector__temperature {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.point-inspector__location {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+

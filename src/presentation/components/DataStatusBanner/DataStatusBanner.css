@@ -1,0 +1,20 @@
+.status-banner {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  backdrop-filter: blur(6px);
+}
+
+.status-banner--error {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+@media (min-width: 640px) {
+  .status-banner {
+    max-width: 24rem;
+  }
+}
