@@ -7,14 +7,19 @@
     "node": ">=24"
   },
   "scripts": {
-    "start": "node --import @swc-node/register/esm-register src/main.ts",
-    "dev": "node --watch --import @swc-node/register/esm-register src/main.ts",
+    "start": "node --env-file-if-exists=.env --import @swc-node/register/esm-register src/main.ts",
+    "dev": "node --watch --env-file-if-exists=.env --import @swc-node/register/esm-register src/main.ts",
     "build": "tsc",
     "lint": "eslint .",
-    "test": "node --import @swc-node/register/esm-register --test \"tests/**/*.test.ts\""
+    "test": "node --import @swc-node/register/esm-register --test \"tests/**/*.test.ts\"",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --env-file-if-exists=.env --import @swc-node/register/esm-register src/scripts/migrate.ts",
+    "db:seed": "node --env-file-if-exists=.env --import @swc-node/register/esm-register src/scripts/seed-grid.ts"
   },
   "dependencies": {
+    "drizzle-orm": "0.45.2",
     "fastify": "5.12.1",
+    "postgres": "3.4.9",
     "reflect-metadata": "0.2.2",
     "tsyringe": "4.10.0"
   },
@@ -22,6 +27,7 @@
     "@swc-node/register": "1.12.1",
     "@swc/core": "1.16.1",
     "@types/node": "24.13.3",
+    "drizzle-kit": "0.31.10",
     "typescript": "6.0.3"
   }
 }

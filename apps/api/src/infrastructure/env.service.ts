@@ -13,6 +13,15 @@ export class Env {
     return process.env.HOST ?? '0.0.0.0'
   }
 
+  /**
+   * Necessarily has two different values: host tooling reaches Postgres on the published port,
+   * a container reaches it by service name. The host value lives in `apps/api/.env`, the
+   * container value in `compose.yaml` — kept apart so neither context can read the other's.
+   */
+  static get DATABASE_URL(): string {
+    return Env.required('DATABASE_URL')
+  }
+
   protected static required(key: string): string {
     const value = process.env[key]
     if (value === undefined || value.length === 0) {
