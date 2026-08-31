@@ -1,42 +1,49 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_GRID_RESOLUTION_DEGREES } from '../../src/application/config'
 import { FetchSnapshotUseCase } from '../../src/application/fetch-snapshot.use-case'
-import type {
-  SnapshotDataSourcePort,
-  SnapshotRequest,
-} from '../../src/application/ports/snapshot-data-source.port'
+import type { SnapshotDataSourcePort } from '../../src/application/ports/snapshot-data-source.port'
 import type { Snapshot } from '../../src/domain/snapshot'
 import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
 
-function createFakeDataSource(
-  behavior: (request: SnapshotRequest) => Promise<Snapshot>,
-): SnapshotDataSourcePort {
+function createFakeDataSource(behavior: (signal?: AbortSignal) => Promise<Snapshot>): SnapshotDataSourcePort {
   return { fetchSnapshot: behavior }
 }
 
 describe('FetchSnapshotUseCase', () => {
-  it('delegates to the data source port with the configured Resolution (success path)', async () => {
+  it('delegates to the data source port and returns the Snapshot it answers with', async () => {
     // Arrange
-    const snapshot: Snapshot = { ...mockSnapshot, resolutionDegrees: DEFAULT_GRID_RESOLUTION_DEGREES }
-    let receivedRequest: SnapshotRequest | undefined
-    const dataSource = createFakeDataSource(async (request) => {
-      receivedRequest = request
-      return snapshot
-    })
+    const dataSource = createFakeDataSource(async () => mockSnapshot)
     const useCase = new FetchSnapshotUseCase(dataSource)
 
     // Act
     const result = await useCase.execute()
 
     // Assert
-    expect(result).toBe(snapshot)
-    expect(receivedRequest).toEqual({ resolutionDegrees: DEFAULT_GRID_RESOLUTION_DEGREES })
+    expect(result).toBe(mockSnapshot)
+    // The Resolution comes from the response: the use case asks for nothing and assumes nothing.
+    expect(result.resolutionDegrees).toBe(mockSnapshot.resolutionDegrees)
+  })
+
+  it('passes the abort signal through to the data source', async () => {
+    // Arrange
+    let receivedSignal: AbortSignal | undefined
+    const dataSource = createFakeDataSource(async (signal) => {
+      receivedSignal = signal
+      return mockSnapshot
+    })
+    const useCase = new FetchSnapshotUseCase(dataSource)
+    const controller = new AbortController()
+
+    // Act
+    await useCase.execute(controller.signal)
+
+    // Assert
+    expect(receivedSignal).toBe(controller.signal)
   })
 
   it('propagates a rejection from the data source (error path — never fails silently)', async () => {
     // Arrange
     const dataSource = createFakeDataSource(async () => {
-      throw new Error('Open-Meteo indisponível')
+      throw new Error('a API do Vento está indisponível')
     })
     const useCase = new FetchSnapshotUseCase(dataSource)
 
@@ -44,7 +51,7 @@ describe('FetchSnapshotUseCase', () => {
     const resultPromise = useCase.execute()
 
     // Assert
-    await expect(resultPromise).rejects.toThrow('Open-Meteo indisponível')
+    await expect(resultPromise).rejects.toThrow('a API do Vento está indisponível')
   })
 
   it('resolves again after a prior failure (stale-error → success retry path)', async () => {

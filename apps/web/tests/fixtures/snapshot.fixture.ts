@@ -6,8 +6,7 @@ import type { Snapshot } from '../../src/domain/snapshot'
  */
 export const mockSnapshot: Snapshot = {
   forecasts: [{ latitude: 0, longitude: 0, temperatureCelsius: 21, validAt: '2026-01-01T00:00' }],
-  fetchedAt: '2026-01-01T00:00:00Z',
-  resolutionDegrees: 10,
+  resolutionDegrees: 5,
   expectedPointCount: 1,
 }
 

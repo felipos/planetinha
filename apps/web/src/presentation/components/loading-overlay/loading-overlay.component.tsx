@@ -8,10 +8,8 @@ export interface LoadingOverlayProps {
 
 /**
  * Blocking modal shown only during the first fetch (`status.kind === 'loading'`) — when there's
- * no Forecast yet to display. Batches of requests to the temperature API are deliberately
- * spaced out to avoid tripping the API's burst limit (see `OpenMeteoTemperatureDataSource`), so
- * the wait is expected, not a failure: this modal makes that explicit instead of leaving the
- * user looking at an empty globe with no explanation.
+ * no Forecast yet to display. A single request to Vento's own backend answers with the whole
+ * Grid, so this is a couple of seconds rather than a wait to be explained away.
  */
 export function LoadingOverlay({ status }: LoadingOverlayProps) {
   if (status.kind !== 'loading') {
@@ -24,8 +22,8 @@ export function LoadingOverlay({ status }: LoadingOverlayProps) {
         <Loader2 className="loading-overlay__spinner" size={28} aria-hidden="true" />
         <p className="loading-overlay__title">Carregando dados de temperatura globais…</p>
         <p className="loading-overlay__subtitle">
-          As requisições são feitas aos poucos, de propósito, para não estourar o limite da API pública de
-          temperatura. Isso pode levar até cerca de um minuto — a espera é esperada.
+          Buscando a temperatura de todo o planeta no servidor do Vento. Isso costuma levar apenas alguns
+          segundos.
         </p>
       </div>
     </div>

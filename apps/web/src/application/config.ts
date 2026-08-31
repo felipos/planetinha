@@ -1,8 +1,7 @@
-/** Lat/long grid spacing fetched from the temperature data source, in degrees. */
-export const DEFAULT_GRID_RESOLUTION_DEGREES = 10
-
 /**
- * Automatic re-fetch interval for temperature data. 30 minutes — comfortably below the
- * external API's non-commercial usage limit (10,000 requests/day).
+ * Automatic re-fetch interval for the Snapshot. Five minutes: the Budget constraint that
+ * justified thirty applied to the upstream weather provider, and this app no longer talks to
+ * one — it asks Vento's own backend, where a request costs nothing upstream. A new hour's
+ * Forecasts therefore appear within a few minutes rather than lagging reality by half an hour.
  */
-export const TEMPERATURE_REFRESH_INTERVAL_MS = 30 * 60 * 1000
+export const TEMPERATURE_REFRESH_INTERVAL_MS = 5 * 60 * 1000
