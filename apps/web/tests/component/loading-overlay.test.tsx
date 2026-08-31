@@ -3,19 +3,16 @@ import { describe, expect, it } from 'vitest'
 import { axe } from 'vitest-axe'
 import { LoadingOverlay } from '../../src/presentation/components/loading-overlay/loading-overlay.component'
 import type { DataFetchStatus } from '../../src/domain/data-fetch-status'
-import { mockEmptySnapshot } from '../fixtures/snapshot.fixture'
+import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
 
 describe('LoadingOverlay', () => {
   it('renders nothing outside the initial loading state', () => {
     // Arrange
     const statuses: DataFetchStatus[] = [
       { kind: 'idle' },
-      { kind: 'success', snapshot: mockEmptySnapshot },
-      {
-        kind: 'partial-success',
-        snapshot: { ...mockEmptySnapshot, expectedPointCount: 100 },
-        coveragePercent: 50,
-      },
+      { kind: 'success', snapshot: mockSnapshot },
+      { kind: 'initial-load', snapshot: mockEmptySnapshot, coveragePercent: 12 },
+      { kind: 'partial-success', snapshot: mockEmptySnapshot, coveragePercent: 50 },
       { kind: 'stale-error', lastGood: mockEmptySnapshot, errorMessage: 'falha' },
       { kind: 'hard-error', errorMessage: 'falha' },
     ]

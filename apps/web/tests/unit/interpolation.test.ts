@@ -4,7 +4,12 @@ import type { Snapshot } from '../../src/domain/snapshot'
 import { mockSnapshot } from '../fixtures/snapshot.fixture'
 
 function snapshotOf(resolutionDegrees: number, forecasts: Snapshot['forecasts']): Snapshot {
-  return { ...mockSnapshot, forecasts, resolutionDegrees, expectedPointCount: forecasts.length }
+  return {
+    ...mockSnapshot,
+    forecasts,
+    resolutionDegrees,
+    coverage: { total: forecasts.length, withData: forecasts.length },
+  }
 }
 
 describe('TemperatureInterpolator.interpolateTemperatureAt', () => {

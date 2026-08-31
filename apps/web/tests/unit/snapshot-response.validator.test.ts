@@ -24,12 +24,13 @@ describe('SnapshotResponseValidator', () => {
     expect(snapshot.resolutionDegrees).toBe(2.5)
   })
 
-  it('takes the Coverage total as the number of Grid Points the Grid holds', () => {
+  it('takes Coverage and the sweep state from the response rather than counting values', () => {
     // Arrange & Act
     const snapshot = SnapshotResponseValidator.toSnapshot(validBody)
 
     // Assert
-    expect(snapshot.expectedPointCount).toBe(2664)
+    expect(snapshot.coverage).toEqual({ total: 2664, withData: 1 })
+    expect(snapshot.sweep).toEqual({ status: 'in_progress', completedAt: null })
     expect(snapshot.forecasts).toHaveLength(2)
   })
 

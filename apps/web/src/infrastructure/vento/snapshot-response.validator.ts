@@ -56,9 +56,11 @@ export class SnapshotResponseValidator {
 
     return {
       forecasts,
-      // The Resolution comes from the response: the backend owns the Grid, not this app.
+      // The Resolution and the Coverage both come from the response: the backend owns the Grid,
+      // and reports how much of it has data rather than leaving this app to count values.
       resolutionDegrees: body.resolutionDegrees,
-      expectedPointCount: body.coverage.total,
+      coverage: { total: body.coverage.total, withData: body.coverage.withData },
+      sweep: { status: body.sweep.status, completedAt: body.sweep.completedAt },
     }
   }
 

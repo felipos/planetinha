@@ -6,15 +6,17 @@ export interface DataStatusBannerProps {
 }
 
 function messageFor(status: DataFetchStatus): string | null {
-  // 'loading' has no message here: the initial load is already communicated by the blocking
+  // 'loading' has no message here: the initial fetch is already communicated by the blocking
   // `LoadingOverlay` modal, avoiding two simultaneous "loading" messages on screen.
   switch (status.kind) {
     case 'idle':
     case 'success':
     case 'loading':
       return null
+    case 'initial-load':
+      return `Carga inicial dos dados: ${status.coveragePercent}% do globo preenchido. O restante aparece aos poucos, conforme o servidor coleta as previsões.`
     case 'partial-success':
-      return `Só foi possível carregar ${status.coveragePercent}% dos dados de temperatura nesta atualização. As regiões restantes ficam sem dado até a próxima tentativa.`
+      return `Nesta hora, ${status.coveragePercent}% do globo tem previsão disponível. As demais regiões ficam sem dado até a próxima coleta.`
     case 'stale-error':
       return `Não foi possível atualizar os dados agora (${status.errorMessage}). Mostrando os últimos dados disponíveis.`
     case 'hard-error':
@@ -24,7 +26,12 @@ function messageFor(status: DataFetchStatus): string | null {
   }
 }
 
-/** Accessible region (`role="status"`) for the loading/error/partial-coverage states. */
+/**
+ * Accessible region (`role="status"`) for the loading/error/Coverage states.
+ *
+ * An instance still filling in for the first time is deliberately not styled as a warning: it
+ * is normal progress, and reads differently from an hour that genuinely has gaps.
+ */
 export function DataStatusBanner({ status }: DataStatusBannerProps) {
   const message = messageFor(status)
   if (message === null) {

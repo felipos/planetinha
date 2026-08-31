@@ -7,12 +7,18 @@ import type { Snapshot } from '../../src/domain/snapshot'
 export const mockSnapshot: Snapshot = {
   forecasts: [{ latitude: 0, longitude: 0, temperatureCelsius: 21, validAt: '2026-01-01T00:00' }],
   resolutionDegrees: 5,
-  expectedPointCount: 1,
+  coverage: { total: 1, withData: 1 },
+  sweep: { status: 'completed', completedAt: '2026-01-01T00:26:00Z' },
 }
 
-/** A Snapshot holding no Forecast at all — the limiting case of partial Coverage. */
+/**
+ * A Snapshot with no temperature anywhere, on an instance whose first collection pass has not
+ * completed — the limiting case of partial Coverage, and what a freshly deployed instance
+ * answers with.
+ */
 export const mockEmptySnapshot: Snapshot = {
   ...mockSnapshot,
   forecasts: [],
-  expectedPointCount: 0,
+  coverage: { total: 2664, withData: 0 },
+  sweep: { status: 'in_progress', completedAt: null },
 }

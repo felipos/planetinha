@@ -20,13 +20,16 @@ export function App({ fetchSnapshotUseCase, selectPointUseCase }: AppProps) {
   const status = useSnapshot(fetchSnapshotUseCase)
 
   const snapshot: Snapshot | null = useMemo(() => {
-    if (status.kind === 'success' || status.kind === 'partial-success') {
-      return status.snapshot
+    switch (status.kind) {
+      case 'success':
+      case 'initial-load':
+      case 'partial-success':
+        return status.snapshot
+      case 'stale-error':
+        return status.lastGood
+      default:
+        return null
     }
-    if (status.kind === 'stale-error') {
-      return status.lastGood
-    }
-    return null
   }, [status])
 
   const { selectedPoint, selectPoint, clearSelection } = useSelectedPoint(snapshot, selectPointUseCase)
