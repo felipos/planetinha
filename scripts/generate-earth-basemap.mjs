@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Gera `src/presentation/components/Globe/earth-basemap.png`: um mapa raster equiretangular
+ * Gera `src/presentation/components/globe/earth-basemap.png`: um mapa raster equiretangular
  * (continentes vs. oceanos) usado como camada de base do globo, por baixo do heatmap de
  * temperatura semi-transparente (ver `heatmap-texture.ts`).
  *
@@ -24,15 +24,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const OUTPUT_WIDTH = 1024
 const OUTPUT_HEIGHT = 512
 const SUPERSAMPLE = 2 // 2x2 subamostras por pixel, para bordas de costa suavizadas.
-const OUTPUT_PATH = path.join(
-  __dirname,
-  '../src/presentation/components/Globe/earth-basemap.png',
-)
+const OUTPUT_PATH = path.join(__dirname, '../src/presentation/components/globe/earth-basemap.png')
 
 const OCEAN_RGB = [9, 20, 40]
 const LAND_RGB = [70, 74, 62]
 
-/** Reproduz exatamente `pixelToLatLon` de `sphere-projection.ts`, para alinhar com a textura do heatmap. */
+/** Reproduz exatamente `SphereProjection.pixelToLatLon` (sphere-projection.ts), para alinhar com a textura do heatmap. */
 function pixelToLatLon(row, col, width, height) {
   const v = height <= 1 ? 0 : row / (height - 1)
   const u = width <= 1 ? 0 : col / (width - 1)
@@ -135,7 +132,9 @@ function main() {
 
   const png = new PNG({ width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT })
 
-  console.log(`Rasterizando em ${OUTPUT_WIDTH}x${OUTPUT_HEIGHT} (supersample ${SUPERSAMPLE}x${SUPERSAMPLE})...`)
+  console.log(
+    `Rasterizando em ${OUTPUT_WIDTH}x${OUTPUT_HEIGHT} (supersample ${SUPERSAMPLE}x${SUPERSAMPLE})...`,
+  )
   for (let row = 0; row < OUTPUT_HEIGHT; row += 1) {
     for (let col = 0; col < OUTPUT_WIDTH; col += 1) {
       let landCoverage = 0

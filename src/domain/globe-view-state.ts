@@ -1,6 +1,6 @@
 /**
- * Estado efêmero de câmera do globo (ver data-model.md) — vive na camada de Presentation,
- * não é persistido entre sessões.
+ * Ephemeral camera state of the globe — lives in the presentation layer, not persisted
+ * between sessions.
  */
 export interface GlobeViewState {
   readonly rotation: { readonly lat: number; readonly lon: number }

@@ -9,7 +9,11 @@
   --color-warning: #f2b84c;
   --focus-ring: #6bb7ff;
 
-  font: 16px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+  font:
+    16px/1.45 system-ui,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   color-scheme: dark light;
   color: var(--color-text);
   background: var(--color-bg);

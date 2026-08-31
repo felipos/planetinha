@@ -1,75 +1,50 @@
-# React + TypeScript + Vite
+# Vento
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive 3D globe that visualizes worldwide temperature data as a color gradient, built with React, TypeScript, Three.js, and Vite.
+Temperature data is fetched from the [Open-Meteo](https://open-meteo.com/) API (no API key required).
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js >= 24 (see `.nvmrc`; run `nvm use` if you use nvm)
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Install dependencies:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Run the dev server (fetches live data from Open-Meteo):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm run dev
 ```
+
+Run the dev server with mocked temperature data (no network calls):
+
+```sh
+npm run dev:mock
+```
+
+The app will be available at the URL printed in the terminal (usually `http://localhost:5173`).
+
+## Other scripts
+
+```sh
+npm run build    # Type-check and build for production
+npm run preview  # Preview the production build locally
+npm run lint     # Run ESLint
+npm run test     # Run the test suite with Vitest
+```
+
+## Project structure
+
+The codebase follows a layered architecture:
+
+- `src/domain` — core types and logic (grid points, temperature readings, color scale, interpolation)
+- `src/application` — use cases and ports (fetching the temperature grid, selecting a point)
+- `src/infrastructure` — data source implementations (Open-Meteo API client, mock data source)
+- `src/presentation` — React components and hooks (the globe, UI)
+
+Tests live under `tests/` (`unit`, `component`, `integration`).

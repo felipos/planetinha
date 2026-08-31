@@ -16,7 +16,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Strict type checking (Constituição Princípio I) */
+    /* Decorators, required for tsyringe dependency injection. Not compatible with
+       erasableSyntaxOnly, since decorator/metadata emission is not pure type erasure. */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* Strict type checking */
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -25,7 +30,6 @@
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src", "tests"]

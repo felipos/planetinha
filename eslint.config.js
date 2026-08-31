@@ -21,12 +21,9 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      // Constituição Princípio II — chaves obrigatórias em toda estrutura de controle.
+      // Require braces on every control structure, even single-statement bodies.
       curly: ['error', 'all'],
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
 ])

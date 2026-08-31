@@ -1,6 +1,6 @@
 /**
- * Ponto que o usuário tocou/clicou para inspeção (User Story 3, ver data-model.md).
- * Derivado sob demanda a partir de `TemperatureGrid.readings` — não é estado persistente.
+ * A point the user tapped/clicked to inspect. Derived on demand from
+ * `TemperatureGrid.readings` — not persisted state.
  */
 export interface SelectedPoint {
   readonly latitude: number

@@ -1,10 +1,12 @@
+import 'reflect-metadata'
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
-// `vitest.config.ts` usa `globals: false`, então o auto-cleanup do RTL (que depende de detectar
-// `afterEach` no escopo global) não é acionado sozinho — sem isso, DOM de um teste vaza para o
-// próximo dentro do mesmo arquivo, quebrando qualquer `getByRole`/query no `document` inteiro.
+// `vitest.config.ts` uses `globals: false`, so RTL's auto-cleanup (which relies on detecting
+// `afterEach` in global scope) isn't triggered on its own — without this, DOM from one test
+// leaks into the next within the same file, breaking any `getByRole`/query against the whole
+// `document`.
 afterEach(() => {
   cleanup()
 })
