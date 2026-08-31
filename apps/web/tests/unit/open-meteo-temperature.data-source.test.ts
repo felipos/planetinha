@@ -14,7 +14,7 @@ function jsonResponse(body: unknown, init?: { status?: number; headers?: Record<
   } as unknown as Response
 }
 
-/** Generates a success response with one reading per coordinate in the URL, regardless of batch. */
+/** Generates a success response with one Forecast per coordinate in the URL, regardless of batch. */
 function successFetch(): ReturnType<typeof vi.fn> {
   return vi.fn(async (url: string | URL) => {
     const parsed = new URL(url)
@@ -52,12 +52,12 @@ describe('OpenMeteoTemperatureDataSource', () => {
 
     const dataSource = createDataSource()
     // resolutionDegrees=180 -> only 4 points -> 1 batch, isolates the retry behavior.
-    const promise = dataSource.fetchGrid({ resolutionDegrees: 180 })
+    const promise = dataSource.fetchSnapshot({ resolutionDegrees: 180 })
     await vi.advanceTimersByTimeAsync(3_000)
-    const grid = await promise
+    const snapshot = await promise
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(grid.readings.every((reading) => reading.temperatureCelsius === 21)).toBe(true)
+    expect(snapshot.forecasts.every((forecast) => forecast.temperatureCelsius === 21)).toBe(true)
   })
 
   it('gives up after the retry budget and rejects with the HTTP error', async () => {
@@ -65,7 +65,7 @@ describe('OpenMeteoTemperatureDataSource', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const dataSource = createDataSource()
-    const promise = dataSource.fetchGrid({ resolutionDegrees: 180 })
+    const promise = dataSource.fetchSnapshot({ resolutionDegrees: 180 })
     const assertion = expect(promise).rejects.toThrow('HTTP 429')
     await vi.runAllTimersAsync()
     await assertion
@@ -74,7 +74,7 @@ describe('OpenMeteoTemperatureDataSource', () => {
     expect(fetchMock).toHaveBeenCalledTimes(5)
   })
 
-  it('returns a partial grid when one batch permanently fails but others succeed', async () => {
+  it('returns a partially covered Snapshot when one batch permanently fails but others succeed', async () => {
     const fetchMock = vi.fn(async (url: string | URL) => {
       const parsed = new URL(url)
       const points = parsed.searchParams.get('latitude')?.split(',') ?? []
@@ -89,13 +89,13 @@ describe('OpenMeteoTemperatureDataSource', () => {
 
     const dataSource = createDataSource()
     // resolutionDegrees=20 -> 180 points -> 2 batches (100 + 80).
-    const promise = dataSource.fetchGrid({ resolutionDegrees: 20 })
+    const promise = dataSource.fetchSnapshot({ resolutionDegrees: 20 })
     await vi.runAllTimersAsync()
-    const grid = await promise
+    const snapshot = await promise
 
-    expect(grid.expectedPointCount).toBe(180)
-    expect(grid.readings).toHaveLength(100)
-    expect(grid.readings.every((reading) => reading.temperatureCelsius === 15)).toBe(true)
+    expect(snapshot.expectedPointCount).toBe(180)
+    expect(snapshot.forecasts).toHaveLength(100)
+    expect(snapshot.forecasts.every((forecast) => forecast.temperatureCelsius === 15)).toBe(true)
     // 1 call for the successful batch + 5 for the batch that exhausts retries (1 initial + 4 retries).
     expect(fetchMock).toHaveBeenCalledTimes(6)
   })
@@ -107,7 +107,7 @@ describe('OpenMeteoTemperatureDataSource', () => {
     const controller = new AbortController()
     const dataSource = createDataSource()
     // resolutionDegrees=20 -> 180 points -> 2 batches (100 + 80), exercises the inter-batch throttle.
-    const promise = dataSource.fetchGrid({ resolutionDegrees: 20 }, controller.signal)
+    const promise = dataSource.fetchSnapshot({ resolutionDegrees: 20 }, controller.signal)
 
     await vi.advanceTimersByTimeAsync(0)
     expect(fetchMock).toHaveBeenCalledTimes(1)

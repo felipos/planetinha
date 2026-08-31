@@ -1,13 +1,13 @@
 import { injectable } from 'tsyringe'
 import { TemperatureInterpolator } from '../domain/utils/interpolation'
 import type { SelectedPoint } from '../domain/selected-point'
-import type { TemperatureGrid } from '../domain/temperature-grid'
+import type { Snapshot } from '../domain/snapshot'
 
-/** Derives a `SelectedPoint` from the current `TemperatureGrid` — holds no state of its own. */
+/** Derives a `SelectedPoint` from the current Snapshot — holds no state of its own. */
 @injectable()
 export class SelectPointUseCase {
-  execute(grid: TemperatureGrid, latitude: number, longitude: number): SelectedPoint {
-    const lookup = TemperatureInterpolator.buildGridLookup(grid)
+  execute(snapshot: Snapshot, latitude: number, longitude: number): SelectedPoint {
+    const lookup = TemperatureInterpolator.buildCellLookup(snapshot)
     const { temperatureCelsius, isInterpolated } = TemperatureInterpolator.interpolateTemperatureAt(
       lookup,
       latitude,

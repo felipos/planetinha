@@ -1,14 +1,14 @@
 import { injectable } from 'tsyringe'
 import { GridPointsGenerator } from '../../domain/utils/grid-points'
-import type { TemperatureGrid } from '../../domain/temperature-grid'
-import type { TemperatureReading } from '../../domain/temperature-reading'
+import type { Snapshot } from '../../domain/snapshot'
+import type { Forecast } from '../../domain/forecast'
 import type {
-  TemperatureDataSourcePort,
-  TemperatureGridRequest,
-} from '../../application/ports/temperature-data-source.port'
+  SnapshotDataSourcePort,
+  SnapshotRequest,
+} from '../../application/ports/snapshot-data-source.port'
 
 /**
- * `TemperatureDataSourcePort` implementation that generates synthetic data locally, with no
+ * `SnapshotDataSourcePort` implementation that generates synthetic data locally, with no
  * network calls at all. Used by `npm run dev:mock` to develop/validate the UI without consuming
  * the public API's free quota.
  *
@@ -48,24 +48,24 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 @injectable()
-export class MockTemperatureDataSource implements TemperatureDataSourcePort {
-  async fetchGrid(request: TemperatureGridRequest, signal?: AbortSignal): Promise<TemperatureGrid> {
+export class MockTemperatureDataSource implements SnapshotDataSourcePort {
+  async fetchSnapshot(request: SnapshotRequest, signal?: AbortSignal): Promise<Snapshot> {
     await delay(SIMULATED_LATENCY_MS, signal)
 
     const points = GridPointsGenerator.generate(request.resolutionDegrees)
     const now = Date.now()
-    const observedAt = new Date(now).toISOString()
+    const validAt = new Date(now).toISOString()
 
-    const readings: TemperatureReading[] = points.map((point) => ({
+    const forecasts: Forecast[] = points.map((point) => ({
       latitude: point.latitude,
       longitude: point.longitude,
       temperatureCelsius: syntheticTemperature(point.latitude, point.longitude, now),
-      observedAt,
+      validAt,
     }))
 
     return {
-      readings,
-      fetchedAt: observedAt,
+      forecasts,
+      fetchedAt: validAt,
       resolutionDegrees: request.resolutionDegrees,
       expectedPointCount: points.length,
     }

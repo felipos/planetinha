@@ -1,8 +1,8 @@
-import type { TemperatureGrid } from '../temperature-grid'
-import type { TemperatureReading } from '../temperature-reading'
+import type { Snapshot } from '../snapshot'
+import type { Forecast } from '../forecast'
 
-export interface GridLookup {
-  readonly cellsByKey: ReadonlyMap<string, TemperatureReading>
+export interface CellLookup {
+  readonly cellsByKey: ReadonlyMap<string, Forecast>
   readonly resolutionDegrees: number
 }
 
@@ -14,12 +14,12 @@ export interface InterpolatedTemperature {
 const COORD_PRECISION = 4
 
 /**
- * Interpolates over the regular lat/long grid fetched from the temperature data source. Uses
- * IDW (inverse-distance weighting) over the up to 4 neighboring grid points of an arbitrary
- * lat/long — used both to generate the heatmap texture and to look up a clicked point, so both
- * agree on which lat/long corresponds to which point on the sphere. Neighboring points without
- * data (`temperatureCelsius: null`) are excluded from the average; if no neighbor has data, the
- * result is `null` ("no data"), never a made-up value.
+ * Interpolates over the Grid a Snapshot's Forecasts sit on. Uses IDW (inverse-distance
+ * weighting) over the up to 4 neighbouring Grid Points of an arbitrary lat/long — used both to
+ * generate the heatmap texture and to look up a clicked point, so both agree on which lat/long
+ * corresponds to which point on the sphere. Neighbouring Grid Points with No Data
+ * (`temperatureCelsius: null`) are excluded from the average; if no neighbour has a
+ * temperature, the result is `null` (No Data), never a made-up value.
  */
 export class TemperatureInterpolator {
   static roundCoord(value: number): number {
@@ -38,16 +38,16 @@ export class TemperatureInterpolator {
     return wrapped
   }
 
-  static buildGridLookup(grid: TemperatureGrid): GridLookup {
-    const cellsByKey = new Map<string, TemperatureReading>()
-    for (const reading of grid.readings) {
-      cellsByKey.set(TemperatureInterpolator.cellKey(reading.latitude, reading.longitude), reading)
+  static buildCellLookup(snapshot: Snapshot): CellLookup {
+    const cellsByKey = new Map<string, Forecast>()
+    for (const forecast of snapshot.forecasts) {
+      cellsByKey.set(TemperatureInterpolator.cellKey(forecast.latitude, forecast.longitude), forecast)
     }
-    return { cellsByKey, resolutionDegrees: grid.resolutionDegrees }
+    return { cellsByKey, resolutionDegrees: snapshot.resolutionDegrees }
   }
 
   static interpolateTemperatureAt(
-    lookup: GridLookup,
+    lookup: CellLookup,
     latitude: number,
     longitude: number,
   ): InterpolatedTemperature {
@@ -74,25 +74,25 @@ export class TemperatureInterpolator {
 
     let weightedSum = 0
     let weightTotal = 0
-    let exactReading: TemperatureReading | undefined
+    let exactForecast: Forecast | undefined
 
     for (const [lat, lon] of candidateCoords) {
-      const reading = TemperatureInterpolator.findReading(lookup, lat, lon)
-      if (reading === undefined || reading.temperatureCelsius === null) {
+      const forecast = TemperatureInterpolator.findForecast(lookup, lat, lon)
+      if (forecast === undefined || forecast.temperatureCelsius === null) {
         continue
       }
       const distance = TemperatureInterpolator.distanceDegrees(clampedLat, wrappedLon, lat, lon)
       if (distance < 1e-6) {
-        exactReading = reading
+        exactForecast = forecast
         break
       }
       const weight = 1 / (distance * distance)
-      weightedSum += weight * reading.temperatureCelsius
+      weightedSum += weight * forecast.temperatureCelsius
       weightTotal += weight
     }
 
-    if (exactReading !== undefined) {
-      return { temperatureCelsius: exactReading.temperatureCelsius, isInterpolated: false }
+    if (exactForecast !== undefined) {
+      return { temperatureCelsius: exactForecast.temperatureCelsius, isInterpolated: false }
     }
     if (weightTotal === 0) {
       return { temperatureCelsius: null, isInterpolated: true }
@@ -104,11 +104,7 @@ export class TemperatureInterpolator {
     return `${TemperatureInterpolator.roundCoord(latitude)}|${TemperatureInterpolator.roundCoord(longitude)}`
   }
 
-  private static findReading(
-    lookup: GridLookup,
-    latitude: number,
-    longitude: number,
-  ): TemperatureReading | undefined {
+  private static findForecast(lookup: CellLookup, latitude: number, longitude: number): Forecast | undefined {
     return lookup.cellsByKey.get(
       TemperatureInterpolator.cellKey(latitude, TemperatureInterpolator.wrapLongitude(longitude)),
     )

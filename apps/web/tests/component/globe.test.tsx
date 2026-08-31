@@ -16,14 +16,14 @@ const { Globe } = await import('../../src/presentation/components/globe/globe.co
 
 describe('Globe', () => {
   it('exposes a text alternative for the visualization (a11y)', () => {
-    const { getByRole } = render(<Globe grid={null} />)
+    const { getByRole } = render(<Globe snapshot={null} />)
     expect(
       getByRole('img', { name: /globo 3d interativo mostrando o padrão de temperatura global/i }),
     ).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations', async () => {
-    const { container } = render(<Globe grid={null} />)
+    const { container } = render(<Globe snapshot={null} />)
     const results = await axe(container)
     expect(results.violations).toEqual([])
   })

@@ -16,7 +16,7 @@ function messageFor(status: DataFetchStatus): string | null {
     case 'partial-success':
       return `Só foi possível carregar ${status.coveragePercent}% dos dados de temperatura nesta atualização. As regiões restantes ficam sem dado até a próxima tentativa.`
     case 'stale-error':
-      return `Não foi possível atualizar os dados agora (${status.errorMessage}). Mostrando a última leitura disponível.`
+      return `Não foi possível atualizar os dados agora (${status.errorMessage}). Mostrando os últimos dados disponíveis.`
     case 'hard-error':
       return `Não foi possível carregar os dados de temperatura (${status.errorMessage}).`
     default:

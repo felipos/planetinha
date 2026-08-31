@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { ColorScale } from '../../../domain/utils/color-scale'
 import { TemperatureInterpolator } from '../../../domain/utils/interpolation'
-import type { TemperatureGrid } from '../../../domain/temperature-grid'
+import type { Snapshot } from '../../../domain/snapshot'
 import earthBasemapUrl from './earth-basemap.png'
 import { SphereProjection } from './sphere-projection'
 
@@ -12,17 +12,17 @@ const HEATMAP_OPACITY = 0.72
 let basemapImagePromise: Promise<HTMLImageElement> | null = null
 
 /**
- * Generates a raster equirectangular texture from the temperature grid, drawn over a static
+ * Generates a raster equirectangular texture from a Snapshot, drawn over a static
  * base map of continents/oceans (`earth-basemap.png`, see
  * `scripts/generate-earth-basemap.mjs`) — the heatmap is layered on top with partial
  * transparency (`HEATMAP_OPACITY`), keeping the continents visible underneath and making it
- * clear this is planet Earth, not an abstract sphere. Points with no data available (including
- * ones that remain `null` after interpolation for lack of neighbors with data) are fully
+ * clear this is planet Earth, not an abstract sphere. Grid Points with No Data (including ones
+ * that remain `null` after interpolation for lack of neighbours with a temperature) are fully
  * transparent in the heatmap layer — never a scale color, so as to never suggest a misleading
- * value — showing the plain base map at those points.
+ * value — showing the plain base map there.
  */
 export class HeatmapTexture {
-  static async create(grid: TemperatureGrid): Promise<THREE.CanvasTexture> {
+  static async create(snapshot: Snapshot): Promise<THREE.CanvasTexture> {
     const canvas = document.createElement('canvas')
     canvas.width = TEXTURE_WIDTH
     canvas.height = TEXTURE_HEIGHT
@@ -45,7 +45,7 @@ export class HeatmapTexture {
       throw new Error('Não foi possível criar o contexto 2D para a camada de heatmap.')
     }
 
-    const lookup = TemperatureInterpolator.buildGridLookup(grid)
+    const lookup = TemperatureInterpolator.buildCellLookup(snapshot)
     const imageData = heatmapContext.createImageData(TEXTURE_WIDTH, TEXTURE_HEIGHT)
 
     for (let y = 0; y < TEXTURE_HEIGHT; y += 1) {

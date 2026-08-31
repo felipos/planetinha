@@ -1,23 +1,23 @@
 import { useEffect } from 'react'
-import type { TemperatureGrid } from '../../../domain/temperature-grid'
+import type { Snapshot } from '../../../domain/snapshot'
 import { HeatmapTexture } from './heatmap-texture'
 import { useGlobeRenderer } from './use-globe-renderer.hook'
 import './globe.css'
 
 export interface GlobeProps {
-  readonly grid: TemperatureGrid | null
+  readonly snapshot: Snapshot | null
   readonly onPointSelect?: (latitude: number, longitude: number) => void
 }
 
-export function Globe({ grid, onPointSelect }: GlobeProps) {
+export function Globe({ snapshot, onPointSelect }: GlobeProps) {
   const { containerRef, setHeatmapTexture } = useGlobeRenderer(onPointSelect)
 
   useEffect(() => {
-    if (grid === null) {
+    if (snapshot === null) {
       return
     }
     let cancelled = false
-    HeatmapTexture.create(grid)
+    HeatmapTexture.create(snapshot)
       .then((texture) => {
         if (!cancelled) {
           setHeatmapTexture(texture)
@@ -31,7 +31,7 @@ export function Globe({ grid, onPointSelect }: GlobeProps) {
     return () => {
       cancelled = true
     }
-  }, [grid, setHeatmapTexture])
+  }, [snapshot, setHeatmapTexture])
 
   return (
     <div

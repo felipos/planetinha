@@ -1,6 +1,6 @@
 /**
- * A point the user tapped/clicked to inspect. Derived on demand from
- * `TemperatureGrid.readings` — not persisted state.
+ * A point the user tapped/clicked to inspect. Derived on demand from a Snapshot's Forecasts —
+ * not persisted state.
  */
 export interface SelectedPoint {
   readonly latitude: number

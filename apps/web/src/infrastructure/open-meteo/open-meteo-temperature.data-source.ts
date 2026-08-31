@@ -1,17 +1,17 @@
 import { injectable } from 'tsyringe'
 import { AbortErrorDetector } from '../../domain/utils/abort-error'
 import { GridPointsGenerator, type GridPoint } from '../../domain/utils/grid-points'
-import type { TemperatureGrid } from '../../domain/temperature-grid'
-import type { TemperatureReading } from '../../domain/temperature-reading'
+import type { Snapshot } from '../../domain/snapshot'
+import type { Forecast } from '../../domain/forecast'
 import type {
-  TemperatureDataSourcePort,
-  TemperatureGridRequest,
-} from '../../application/ports/temperature-data-source.port'
+  SnapshotDataSourcePort,
+  SnapshotRequest,
+} from '../../application/ports/snapshot-data-source.port'
 import { Env } from '../env.service'
 import { HttpClient } from '../http-client.service'
 
 /**
- * Concrete `TemperatureDataSourcePort` implementation for the Open-Meteo public API.
+ * Concrete `SnapshotDataSourcePort` implementation for the Open-Meteo public API.
  */
 
 // No documented fixed ceiling on coordinate count; the real observed limit is URL length (HTTP
@@ -83,10 +83,10 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 @injectable()
-export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort {
+export class OpenMeteoTemperatureDataSource implements SnapshotDataSourcePort {
   constructor(private readonly httpClient: HttpClient) {}
 
-  async fetchGrid(request: TemperatureGridRequest, signal?: AbortSignal): Promise<TemperatureGrid> {
+  async fetchSnapshot(request: SnapshotRequest, signal?: AbortSignal): Promise<Snapshot> {
     const points = GridPointsGenerator.generate(request.resolutionDegrees)
     const batches = chunk(points, BATCH_SIZE)
 
@@ -96,10 +96,10 @@ export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort
     // (via HttpClient) before giving up.
     //
     // A batch that exhausts its retries does NOT bring down the whole fetch: it's skipped (its
-    // points are left out of `readings`, showing up as "no data" on the globe) and the
-    // remaining batches keep going — only if EVERY batch fails (no readings obtained at all)
+    // Grid Points are left out of `forecasts`, showing up as No Data on the globe) and the
+    // remaining batches keep going — only if EVERY batch fails (no Forecast obtained at all)
     // does the whole fetch reject.
-    const readings: TemperatureReading[] = []
+    const forecasts: Forecast[] = []
     let lastError: unknown
     for (let i = 0; i < batches.length; i += 1) {
       if (i > 0) {
@@ -110,8 +110,8 @@ export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort
         continue
       }
       try {
-        const batchReadings = await this.fetchBatch(batch, signal)
-        readings.push(...batchReadings)
+        const batchForecasts = await this.fetchBatch(batch, signal)
+        forecasts.push(...batchForecasts)
       } catch (error) {
         if (AbortErrorDetector.isAbortError(error)) {
           throw error
@@ -120,24 +120,21 @@ export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort
       }
     }
 
-    if (readings.length === 0 && batches.length > 0) {
+    if (forecasts.length === 0 && batches.length > 0) {
       throw lastError instanceof Error
         ? lastError
         : new Error('Falha desconhecida ao buscar a grade de temperatura.')
     }
 
     return {
-      readings,
+      forecasts,
       fetchedAt: new Date().toISOString(),
       resolutionDegrees: request.resolutionDegrees,
       expectedPointCount: points.length,
     }
   }
 
-  private async fetchBatch(
-    points: readonly GridPoint[],
-    signal?: AbortSignal,
-  ): Promise<TemperatureReading[]> {
+  private async fetchBatch(points: readonly GridPoint[], signal?: AbortSignal): Promise<Forecast[]> {
     const body = await this.httpClient.getJson<unknown>(buildRequestUrl(points), { signal })
 
     if (isErrorResponse(body)) {
@@ -151,12 +148,12 @@ export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort
     return points.map((point, index) => {
       const item = items[index]
       const temperature = item?.current?.temperature_2m
-      const observedAt = item?.current?.time ?? new Date().toISOString()
+      const validAt = item?.current?.time ?? new Date().toISOString()
       return {
         latitude: point.latitude,
         longitude: point.longitude,
         temperatureCelsius: typeof temperature === 'number' ? temperature : null,
-        observedAt,
+        validAt,
       }
     })
   }

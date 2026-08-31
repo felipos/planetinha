@@ -4,5 +4,5 @@
  * against).
  */
 export const TOKENS = {
-  TemperatureDataSourcePort: Symbol('TemperatureDataSourcePort'),
+  SnapshotDataSourcePort: Symbol('SnapshotDataSourcePort'),
 } as const

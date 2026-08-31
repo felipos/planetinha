@@ -8,10 +8,10 @@ export interface LoadingOverlayProps {
 
 /**
  * Blocking modal shown only during the first fetch (`status.kind === 'loading'`) — when there's
- * no reading yet to display. Batches of requests to the temperature API are deliberately spaced
- * out to avoid tripping the API's burst limit (see `OpenMeteoTemperatureDataSource`), so the
- * wait is expected, not a failure: this modal makes that explicit instead of leaving the user
- * looking at an empty globe with no explanation.
+ * no Forecast yet to display. Batches of requests to the temperature API are deliberately
+ * spaced out to avoid tripping the API's burst limit (see `OpenMeteoTemperatureDataSource`), so
+ * the wait is expected, not a failure: this modal makes that explicit instead of leaving the
+ * user looking at an empty globe with no explanation.
  */
 export function LoadingOverlay({ status }: LoadingOverlayProps) {
   if (status.kind !== 'loading') {

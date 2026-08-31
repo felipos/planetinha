@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { SelectPointUseCase } from '../../application/select-point.use-case'
 import type { SelectedPoint } from '../../domain/selected-point'
-import type { TemperatureGrid } from '../../domain/temperature-grid'
+import type { Snapshot } from '../../domain/snapshot'
 
 export interface UseSelectedPointResult {
   readonly selectedPoint: SelectedPoint | null
@@ -9,21 +9,21 @@ export interface UseSelectedPointResult {
   clearSelection(): void
 }
 
-/** Derives the selected point from a click/tap on the globe plus the current grid. */
+/** Derives the selected point from a click/tap on the globe plus the current Snapshot. */
 export function useSelectedPoint(
-  grid: TemperatureGrid | null,
+  snapshot: Snapshot | null,
   selectPointUseCase: SelectPointUseCase,
 ): UseSelectedPointResult {
   const [selectedPoint, setSelectedPoint] = useState<SelectedPoint | null>(null)
 
   const selectPoint = useCallback(
     (latitude: number, longitude: number) => {
-      if (grid === null) {
+      if (snapshot === null) {
         return
       }
-      setSelectedPoint(selectPointUseCase.execute(grid, latitude, longitude))
+      setSelectedPoint(selectPointUseCase.execute(snapshot, latitude, longitude))
     },
-    [grid, selectPointUseCase],
+    [snapshot, selectPointUseCase],
   )
 
   const clearSelection = useCallback(() => {
