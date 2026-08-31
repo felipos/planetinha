@@ -11,13 +11,16 @@ export interface FetchedForecastWindow {
   readonly forecasts: readonly FetchedForecast[]
   /** The moment these values were retrieved, stamped on every Forecast they produce. */
   readonly fetchedAt: Date
-  /** HTTP requests issued, retries included, and how many of them were rate limited. */
-  readonly upstreamCallsMade: number
-  readonly rateLimitHits: number
 }
 
+/**
+ * What it cost is reported as it happens rather than in the result, because a call that ends in
+ * a failure still spent Budget — and a Sweep has to record what it spent either way.
+ */
 export interface FetchForecastsOptions {
   readonly signal?: AbortSignal
+  /** Called once per HTTP request issued, retries included. */
+  onUpstreamCall?(): void
   /** Called once per Rate Limit response, so the caller can log it against its own Slice. */
   onRateLimited?(): void
 }

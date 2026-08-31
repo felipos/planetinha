@@ -60,24 +60,16 @@ export class OpenMeteoForecastDataSource implements ForecastSourcePort {
     options?: FetchForecastsOptions,
   ): Promise<FetchedForecastWindow> {
     if (gridPoints.length === 0) {
-      return { forecasts: [], fetchedAt: this.clock.now(), upstreamCallsMade: 0, rateLimitHits: 0 }
+      return { forecasts: [], fetchedAt: this.clock.now() }
     }
-
-    let upstreamCallsMade = 0
-    let rateLimitHits = 0
 
     const body = await this.httpClient.getJson<unknown>(
       OpenMeteoForecastDataSource.buildRequestUrl(gridPoints),
       {
         signal: options?.signal,
         observer: {
-          onAttempt: () => {
-            upstreamCallsMade += 1
-          },
-          onRateLimited: () => {
-            rateLimitHits += 1
-            options?.onRateLimited?.()
-          },
+          onAttempt: () => options?.onUpstreamCall?.(),
+          onRateLimited: () => options?.onRateLimited?.(),
         },
       },
     )
@@ -89,8 +81,6 @@ export class OpenMeteoForecastDataSource implements ForecastSourcePort {
     return {
       forecasts: OpenMeteoForecastDataSource.toForecasts(gridPoints, body),
       fetchedAt: this.clock.now(),
-      upstreamCallsMade,
-      rateLimitHits,
     }
   }
 

@@ -27,6 +27,25 @@ export class Env {
     return Env.required('OPEN_METEO_FORECAST_URL')
   }
 
+  /**
+   * How many Grid Points one Slice covers. 100 is the most coordinates the provider accepts in
+   * one call, which makes the Grid 26 Slices; lower it if measured Rate Limit responses say the
+   * pace is too fast.
+   */
+  static get SLICE_SIZE(): number {
+    return Env.optionalNumber('SLICE_SIZE', 100)
+  }
+
+  /** How long the worker waits between Ticks. One Slice is advanced per Tick, at most. */
+  static get TICK_INTERVAL_MS(): number {
+    return Env.optionalNumber('TICK_INTERVAL_MS', 60_000)
+  }
+
+  /** How long after a Sweep starts the next one becomes due. Twice a day is 12 hours. */
+  static get SWEEP_INTERVAL_MS(): number {
+    return Env.optionalNumber('SWEEP_INTERVAL_MS', 12 * 60 * 60 * 1_000)
+  }
+
   protected static required(key: string): string {
     const value = process.env[key]
     if (value === undefined || value.length === 0) {

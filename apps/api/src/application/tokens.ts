@@ -5,4 +5,8 @@
  */
 export const TOKENS = {
   SnapshotRepositoryPort: Symbol('SnapshotRepositoryPort'),
+  SweepRepositoryPort: Symbol('SweepRepositoryPort'),
+  ForecastSourcePort: Symbol('ForecastSourcePort'),
+  LoggerPort: Symbol('LoggerPort'),
+  SweepConfig: Symbol('SweepConfig'),
 } as const

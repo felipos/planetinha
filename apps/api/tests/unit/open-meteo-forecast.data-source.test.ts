@@ -68,14 +68,18 @@ describe('OpenMeteoForecastDataSource', () => {
     globalThis.fetch = mock.fn(async () =>
       jsonResponse(points.map((_point, index) => hourlySeries((hour) => index * 100 + hour))),
     ) as typeof fetch
+    let upstreamCalls = 0
 
     // Act
-    const window = await createDataSource().fetchForecastWindow(points)
+    const window = await createDataSource().fetchForecastWindow(points, {
+      onUpstreamCall: () => {
+        upstreamCalls += 1
+      },
+    })
 
     // Assert
     assert.equal(window.forecasts.length, points.length * HOURS_IN_WINDOW)
-    assert.equal(window.upstreamCallsMade, 1)
-    assert.equal(window.rateLimitHits, 0)
+    assert.equal(upstreamCalls, 1)
     const hours = window.forecasts.filter((forecast) => forecast.gridPointId === 1)
     assert.equal(hours.length, HOURS_IN_WINDOW)
     // 48 consecutive hours, so the window runs into the second forecast day.
@@ -151,9 +155,13 @@ describe('OpenMeteoForecastDataSource', () => {
       return jsonResponse([hourlySeries(() => 7)])
     }) as typeof fetch
     let observedRateLimits = 0
+    let upstreamCalls = 0
 
     // Act
     const window = await createDataSource().fetchForecastWindow(points, {
+      onUpstreamCall: () => {
+        upstreamCalls += 1
+      },
       onRateLimited: () => {
         observedRateLimits += 1
       },
@@ -161,10 +169,9 @@ describe('OpenMeteoForecastDataSource', () => {
 
     // Assert
     assert.equal(calls, 2)
-    assert.equal(window.rateLimitHits, 1)
     assert.equal(observedRateLimits, 1)
     // Both attempts count as upstream calls: a retry is another call against the Budget.
-    assert.equal(window.upstreamCallsMade, 2)
+    assert.equal(upstreamCalls, 2)
     assert.ok(window.forecasts.every((forecast) => forecast.temperatureCelsius === 7))
   })
 
