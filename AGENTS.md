@@ -38,6 +38,7 @@
   - Validator → `*.validator.ts`
   - React hook → `*.hook.ts`
   - React component → `*.component.tsx`
+  - Test fixture → `*.fixture.ts`
 - A CSS file paired with a component keeps the component's plain kebab-case name, with no `.component` suffix
   (`data-status-banner.component.tsx` pairs with `data-status-banner.css`).
 - Plain domain value types/interfaces that aren't a "layer" (e.g. `temperature-reading.ts`, `temperature-grid.ts`) keep a bare kebab-case
@@ -73,3 +74,46 @@
 
 - A pre-commit hook (managed by husky + lint-staged, see `.husky/pre-commit`) runs Prettier on staged files before every commit. It installs
   automatically on `npm install` via the `prepare` script — never bypass it with `--no-verify`.
+
+## Testing
+
+### AAA pattern (Arrange / Act / Assert)
+
+Each `it` should separate the three phases with comments (or equivalent blocks). One action under test per case:
+
+```typescript
+it('propagates a rejection from the data source', async () => {
+  // Arrange
+  const dataSource = createFakeDataSource(async () => {
+    throw new Error('Open-Meteo indisponível')
+  })
+  const useCase = new FetchTemperatureGridUseCase(dataSource)
+
+  // Act
+  const resultPromise = useCase.execute()
+
+  // Assert
+  await expect(resultPromise).rejects.toThrow('Open-Meteo indisponível')
+})
+```
+
+- **Arrange:** mocks, fixtures (`tests/fixtures/`), and any input/event setup.
+- **Act:** a single call to the use case, hook, or public method under test.
+- **Assert:** the output contract (a thrown error, a resolved value, rendered DOM, a `DataFetchStatus.kind`, etc.).
+
+### Using fixtures
+
+Import shared fixtures from `tests/fixtures/` (create the folder the first time a fixture is actually needed — don't add it speculatively).
+Prefer spreading to override specific fields instead of duplicating the whole object:
+
+```typescript
+import { mockTemperatureGrid } from '../fixtures/temperature-grid.fixture'
+
+const partiallyCoveredGrid = {
+  ...mockTemperatureGrid,
+  expectedPointCount: 100,
+}
+```
+
+A fixture file gets the `*.fixture.ts` suffix, following the same layer-suffix convention as the rest of the codebase (see Naming
+Conventions above).
