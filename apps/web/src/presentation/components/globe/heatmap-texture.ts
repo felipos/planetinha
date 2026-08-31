@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { ColorScale } from '../../../domain/utils/color-scale'
-import { TemperatureInterpolator } from '../../../domain/utils/interpolation'
+import { CellLocator } from '../../../domain/utils/cell-locator'
 import type { Snapshot } from '../../../domain/snapshot'
 import earthBasemapUrl from './earth-basemap.png'
 import { SphereProjection } from './sphere-projection'
@@ -16,10 +16,14 @@ let basemapImagePromise: Promise<HTMLImageElement> | null = null
  * base map of continents/oceans (`earth-basemap.png`, see
  * `scripts/generate-earth-basemap.mjs`) — the heatmap is layered on top with partial
  * transparency (`HEATMAP_OPACITY`), keeping the continents visible underneath and making it
- * clear this is planet Earth, not an abstract sphere. Grid Points with No Data (including ones
- * that remain `null` after interpolation for lack of neighbours with a temperature) are fully
- * transparent in the heatmap layer — never a scale color, so as to never suggest a misleading
- * value — showing the plain base map there.
+ * clear this is planet Earth, not an abstract sphere.
+ *
+ * Every Cell is painted as a flat block of its own Grid Point's Forecast, and nothing is
+ * blended between neighbours: the result is a visibly blocky patchwork, and that is the
+ * intended result rather than an unfinished one — the globe shows exactly the values Vento
+ * fetched and none it invented. A Cell with No Data is fully transparent, showing the plain
+ * base map through it, so it reads as a genuine hole instead of being smeared over by whatever
+ * its neighbours happened to report.
  */
 export class HeatmapTexture {
   static async create(snapshot: Snapshot): Promise<THREE.CanvasTexture> {
@@ -45,17 +49,14 @@ export class HeatmapTexture {
       throw new Error('Não foi possível criar o contexto 2D para a camada de heatmap.')
     }
 
-    const lookup = TemperatureInterpolator.buildCellLookup(snapshot)
+    const lookup = CellLocator.buildLookup(snapshot)
     const imageData = heatmapContext.createImageData(TEXTURE_WIDTH, TEXTURE_HEIGHT)
 
     for (let y = 0; y < TEXTURE_HEIGHT; y += 1) {
       for (let x = 0; x < TEXTURE_WIDTH; x += 1) {
         const { latitude, longitude } = SphereProjection.pixelToLatLon(y, x, TEXTURE_WIDTH, TEXTURE_HEIGHT)
-        const { temperatureCelsius } = TemperatureInterpolator.interpolateTemperatureAt(
-          lookup,
-          latitude,
-          longitude,
-        )
+        const temperatureCelsius =
+          CellLocator.findForecast(lookup, latitude, longitude)?.temperatureCelsius ?? null
         const index = (y * TEXTURE_WIDTH + x) * 4
         if (temperatureCelsius === null) {
           imageData.data[index + 3] = 0

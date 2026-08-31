@@ -8,7 +8,6 @@ const samplePoint: SelectedPoint = {
   latitude: 10,
   longitude: -40,
   temperatureCelsius: 24.3,
-  isInterpolated: false,
 }
 
 describe('PointInspector', () => {

@@ -13,7 +13,11 @@ function formatCoordinate(value: number, positiveSuffix: string, negativeSuffix:
   return `${Math.abs(value).toFixed(2)}° ${suffix}`
 }
 
-/** Accessible panel with the numeric temperature value plus an approximate location. */
+/**
+ * Accessible panel with the numeric temperature value plus the Grid Point it belongs to. The
+ * coordinates are the containing Cell's own, not the position clicked, so the number is never
+ * attributed to a place Vento did not sample.
+ */
 export function PointInspector({ point, onClose }: PointInspectorProps) {
   useEffect(() => {
     if (point === null) {
@@ -51,10 +55,7 @@ export function PointInspector({ point, onClose }: PointInspectorProps) {
         <X size={16} aria-hidden="true" />
       </button>
       <p className="point-inspector__temperature">{temperatureLabel}</p>
-      <p className="point-inspector__location">
-        {locationLabel}
-        {point.isInterpolated ? ' (estimado por interpolação)' : ''}
-      </p>
+      <p className="point-inspector__location">{locationLabel}</p>
     </div>
   )
 }
