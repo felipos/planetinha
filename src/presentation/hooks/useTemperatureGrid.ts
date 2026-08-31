@@ -17,6 +17,11 @@ function describeError(error: unknown): string {
  * falha no refresh nunca limpa os dados já exibidos: o status vai para `stale-error`
  * preservando `lastGood`, em vez de voltar para `loading`/`hard-error`.
  *
+ * Quando a busca só falha PARCIALMENTE (algumas regiões da grade vieram, outras não —
+ * `grid.readings.length < grid.expectedPointCount`), o status vira `partial-success` em vez de
+ * `success`: mostra o grid recém-buscado mesmo incompleto (em vez de descartá-lo por causa de
+ * uma falha que não foi total), com a porcentagem de cobertura para informar o usuário.
+ *
  * Um `AbortController` por execução do efeito garante que uma busca obsoleta (ex.: o
  * double-invoke do `StrictMode` em dev — mount → cleanup → mount — ou uma desmontagem real) seja
  * de fato cancelada em vez de só ter seu resultado ignorado: sem isso, o `fetch`/backoff
@@ -31,15 +36,23 @@ export function useTemperatureGrid(
     const controller = new AbortController()
 
     async function load(): Promise<void> {
-      // Mantém a última visualização válida (success ou stale-error) visível durante um
-      // refresh silencioso em segundo plano; só mostra "loading" quando ainda não há dado
-      // nenhum para exibir.
+      // Mantém a última visualização válida (success, partial-success ou stale-error) visível
+      // durante um refresh silencioso em segundo plano; só mostra "loading" quando ainda não há
+      // dado nenhum para exibir.
       setStatus((previous) =>
-        previous.kind === 'success' || previous.kind === 'stale-error' ? previous : { kind: 'loading' },
+        previous.kind === 'success' || previous.kind === 'partial-success' || previous.kind === 'stale-error'
+          ? previous
+          : { kind: 'loading' },
       )
       try {
         const grid = await fetchTemperatureGridUseCase.execute(controller.signal)
-        setStatus({ kind: 'success', grid })
+        if (grid.readings.length < grid.expectedPointCount) {
+          const coveragePercent =
+            grid.expectedPointCount === 0 ? 100 : Math.round((grid.readings.length / grid.expectedPointCount) * 100)
+          setStatus({ kind: 'partial-success', grid, coveragePercent })
+        } else {
+          setStatus({ kind: 'success', grid })
+        }
       } catch (error) {
         if (isAbortError(error)) {
           // Cancelamento intencional, não uma falha real — não deve virar erro para o usuário.
@@ -47,7 +60,7 @@ export function useTemperatureGrid(
         }
         const errorMessage = describeError(error)
         setStatus((previous) => {
-          if (previous.kind === 'success') {
+          if (previous.kind === 'success' || previous.kind === 'partial-success') {
             return { kind: 'stale-error', lastGood: previous.grid, errorMessage }
           }
           if (previous.kind === 'stale-error') {

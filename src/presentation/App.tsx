@@ -18,7 +18,7 @@ export function App({ fetchTemperatureGridUseCase }: AppProps) {
   const status = useTemperatureGrid(fetchTemperatureGridUseCase)
 
   const grid: TemperatureGrid | null = useMemo(() => {
-    if (status.kind === 'success') {
+    if (status.kind === 'success' || status.kind === 'partial-success') {
       return status.grid
     }
     if (status.kind === 'stale-error') {

@@ -18,6 +18,7 @@ describe('FetchTemperatureGridUseCase', () => {
       readings: [{ latitude: 0, longitude: 0, temperatureCelsius: 21, observedAt: '2026-01-01T00:00' }],
       fetchedAt: '2026-01-01T00:00:00Z',
       resolutionDegrees: 10,
+      expectedPointCount: 1,
     }
     let receivedRequest: TemperatureGridRequest | undefined
     const dataSource = createFakeDataSource(async (request) => {
@@ -43,7 +44,12 @@ describe('FetchTemperatureGridUseCase', () => {
 
   it('resolves again after a prior failure (stale-error → success retry path)', async () => {
     let callCount = 0
-    const grid: TemperatureGrid = { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10 }
+    const grid: TemperatureGrid = {
+      readings: [],
+      fetchedAt: '2026-01-01T00:00:00Z',
+      resolutionDegrees: 10,
+      expectedPointCount: 0,
+    }
     const dataSource = createFakeDataSource(async () => {
       callCount += 1
       if (callCount === 1) {

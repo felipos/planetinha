@@ -8,10 +8,18 @@ describe('LoadingOverlay', () => {
   it('renders nothing outside the initial loading state', () => {
     const statuses: DataFetchStatus[] = [
       { kind: 'idle' },
-      { kind: 'success', grid: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10 } },
+      {
+        kind: 'success',
+        grid: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10, expectedPointCount: 0 },
+      },
+      {
+        kind: 'partial-success',
+        grid: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10, expectedPointCount: 100 },
+        coveragePercent: 50,
+      },
       {
         kind: 'stale-error',
-        lastGood: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10 },
+        lastGood: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10, expectedPointCount: 0 },
         errorMessage: 'falha',
       },
       { kind: 'hard-error', errorMessage: 'falha' },

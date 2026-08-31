@@ -3,7 +3,7 @@ import { buildGridLookup, interpolateTemperatureAt, roundCoord, wrapLongitude } 
 import type { TemperatureGrid } from '../../src/domain/temperature-grid'
 
 function grid(resolutionDegrees: number, readings: TemperatureGrid['readings']): TemperatureGrid {
-  return { readings, fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees }
+  return { readings, fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees, expectedPointCount: readings.length }
 }
 
 describe('interpolateTemperatureAt', () => {

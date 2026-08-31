@@ -169,7 +169,13 @@ export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort
     // paralelo pode estourar um rate limit de rajada de curto prazo do Open-Meteo (HTTP 429).
     // Além disso, um delay mínimo (BATCH_THROTTLE_MS) é aplicado entre lotes, e cada lote que
     // ainda assim receber 429 tenta de novo com backoff exponencial antes de desistir.
+    //
+    // Um lote que esgota as tentativas NÃO derruba a busca inteira: ele é pulado (seus pontos
+    // ficam de fora de `readings`, aparecendo como "sem dado" no globo) e os lotes seguintes
+    // continuam normalmente — só se TODOS os lotes falharem (nenhuma leitura obtida) que a busca
+    // inteira rejeita, preservando o comportamento de falha total já existente.
     const readings: TemperatureReading[] = []
+    let lastError: unknown
     for (let i = 0; i < batches.length; i += 1) {
       if (i > 0) {
         await sleep(BATCH_THROTTLE_MS, signal)
@@ -178,14 +184,26 @@ export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort
       if (batch === undefined) {
         continue
       }
-      const batchReadings = await fetchBatch(batch, signal)
-      readings.push(...batchReadings)
+      try {
+        const batchReadings = await fetchBatch(batch, signal)
+        readings.push(...batchReadings)
+      } catch (error) {
+        if (isAbortError(error)) {
+          throw error
+        }
+        lastError = error
+      }
+    }
+
+    if (readings.length === 0 && batches.length > 0) {
+      throw lastError instanceof Error ? lastError : new Error('Falha desconhecida ao buscar a grade de temperatura.')
     }
 
     return {
       readings,
       fetchedAt: new Date().toISOString(),
       resolutionDegrees: request.resolutionDegrees,
+      expectedPointCount: points.length,
     }
   }
 }

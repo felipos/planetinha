@@ -76,6 +76,32 @@ describe('OpenMeteoTemperatureDataSource', () => {
     expect(fetchMock).toHaveBeenCalledTimes(5)
   })
 
+  it('returns a partial grid when one batch permanently fails but others succeed', async () => {
+    const fetchMock = vi.fn(async (url: string | URL) => {
+      const parsed = new URL(url)
+      const points = parsed.searchParams.get('latitude')?.split(',') ?? []
+      if (points.length === 100) {
+        // Primeiro lote: sempre sucesso.
+        return jsonResponse(points.map(() => ({ current: { temperature_2m: 15, time: '2026-01-01T00:00' } })))
+      }
+      // Segundo lote (80 pontos): 429 persistente, esgota todas as tentativas de retry.
+      return jsonResponse(null, { status: 429 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const dataSource = new OpenMeteoTemperatureDataSource()
+    // resolutionDegrees=20 -> 180 pontos -> 2 lotes (100 + 80).
+    const promise = dataSource.fetchGrid({ resolutionDegrees: 20 })
+    await vi.runAllTimersAsync()
+    const grid = await promise
+
+    expect(grid.expectedPointCount).toBe(180)
+    expect(grid.readings).toHaveLength(100)
+    expect(grid.readings.every((reading) => reading.temperatureCelsius === 15)).toBe(true)
+    // 1 chamada do lote bem-sucedido + 5 do lote que esgota os retries (1 inicial + 4 retries).
+    expect(fetchMock).toHaveBeenCalledTimes(6)
+  })
+
   it('throttles between batches and aborting mid-wait stops before the next batch fires', async () => {
     const fetchMock = successFetch()
     vi.stubGlobal('fetch', fetchMock)

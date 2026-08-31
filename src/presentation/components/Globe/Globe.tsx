@@ -16,8 +16,21 @@ export function Globe({ grid, onPointSelect }: GlobeProps) {
     if (grid === null) {
       return
     }
-    const texture = createHeatmapTexture(grid)
-    setHeatmapTexture(texture)
+    let cancelled = false
+    createHeatmapTexture(grid)
+      .then((texture) => {
+        if (!cancelled) {
+          setHeatmapTexture(texture)
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          console.error('Falha ao gerar a textura do globo:', error)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
   }, [grid, setHeatmapTexture])
 
   return (

@@ -66,6 +66,7 @@ export class MockTemperatureDataSource implements TemperatureDataSourcePort {
       readings,
       fetchedAt: observedAt,
       resolutionDegrees: request.resolutionDegrees,
+      expectedPointCount: points.length,
     }
   }
 }

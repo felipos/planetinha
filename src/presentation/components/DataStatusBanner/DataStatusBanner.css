@@ -13,6 +13,11 @@
   color: var(--color-danger);
 }
 
+.status-banner--warning {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
 @media (min-width: 640px) {
   .status-banner {
     max-width: 24rem;

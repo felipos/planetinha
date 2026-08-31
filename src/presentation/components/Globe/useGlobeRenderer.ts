@@ -21,6 +21,42 @@ const MIN_ZOOM_DISTANCE = 1.3
 const MAX_ZOOM_DISTANCE = 6
 const CLICK_MOVEMENT_THRESHOLD_PX = 6
 
+const ATMOSPHERE_RADIUS = SPHERE_RADIUS * 1.08
+const ATMOSPHERE_COLOR = new THREE.Color(0x7ec8ff)
+
+/**
+ * Casca translúcida um pouco maior que o globo, com um brilho tipo Fresnel (mais intenso na
+ * borda/silhueta, invisível de frente) para dar a sensação de atmosfera de um planeta visto do
+ * espaço. É um objeto separado do globo de dados (aditivo, sem escrever no depth buffer) —
+ * puramente cosmético, nunca altera a cor real de nenhum ponto do heatmap.
+ */
+function createAtmosphere(): THREE.Mesh {
+  const geometry = new THREE.SphereGeometry(ATMOSPHERE_RADIUS, 64, 64)
+  const material = new THREE.ShaderMaterial({
+    uniforms: { glowColor: { value: ATMOSPHERE_COLOR } },
+    vertexShader: `
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vNormal;
+      uniform vec3 glowColor;
+      void main() {
+        float intensity = pow(0.75 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+        gl_FragColor = vec4(glowColor * intensity * 1.8, intensity);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide,
+  })
+  return new THREE.Mesh(geometry, material)
+}
+
 export function useGlobeRenderer(
   onPointSelect?: (latitude: number, longitude: number) => void,
 ): GlobeRendererHandle {
@@ -62,6 +98,9 @@ export function useGlobeRenderer(
     const sphere = new THREE.Mesh(geometry, material)
     scene.add(sphere)
     sphereMeshRef.current = sphere
+
+    const atmosphere = createAtmosphere()
+    scene.add(atmosphere)
 
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
@@ -158,6 +197,8 @@ export function useGlobeRenderer(
       controls.dispose()
       geometry.dispose()
       material.dispose()
+      atmosphere.geometry.dispose()
+      ;(atmosphere.material as THREE.Material).dispose()
       renderer.dispose()
       containerElement.removeChild(renderer.domElement)
       sphereMeshRef.current = null
@@ -174,6 +215,10 @@ export function useGlobeRenderer(
       material.map.dispose()
     }
     material.map = texture
+    // `MeshBasicMaterial.color` MULTIPLICA a textura — sem resetar para branco aqui, a cor de
+    // placeholder escura (`DEFAULT_SPHERE_COLOR`) continuava tingindo o heatmap inteiro,
+    // escurecendo tons quentes e apagando os frios quase por completo contra o fundo preto.
+    material.color.set(0xffffff)
     material.needsUpdate = true
   }, [])
 

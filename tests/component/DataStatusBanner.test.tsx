@@ -10,10 +10,23 @@ describe('DataStatusBanner', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  it('announces partial-success with the coverage percentage, styled as a warning (not an error)', () => {
+    const status: DataFetchStatus = {
+      kind: 'partial-success',
+      grid: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10, expectedPointCount: 100 },
+      coveragePercent: 87,
+    }
+    const { getByRole } = render(<DataStatusBanner status={status} />)
+    const region = getByRole('status')
+    expect(region).toHaveTextContent('87%')
+    expect(region.className).toContain('status-banner--warning')
+    expect(region.className).not.toContain('status-banner--error')
+  })
+
   it('announces stale-error via an accessible live region, preserving the last-good message', () => {
     const status: DataFetchStatus = {
       kind: 'stale-error',
-      lastGood: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10 },
+      lastGood: { readings: [], fetchedAt: '2026-01-01T00:00:00Z', resolutionDegrees: 10, expectedPointCount: 0 },
       errorMessage: 'falha de rede',
     }
     const { getByRole } = render(<DataStatusBanner status={status} />)
