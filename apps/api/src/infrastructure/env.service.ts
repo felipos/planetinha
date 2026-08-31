@@ -22,6 +22,11 @@ export class Env {
     return Env.required('DATABASE_URL')
   }
 
+  /** The upstream weather provider's forecast endpoint — the only URL the api fetches from. */
+  static get OPEN_METEO_FORECAST_URL(): string {
+    return Env.required('OPEN_METEO_FORECAST_URL')
+  }
+
   protected static required(key: string): string {
     const value = process.env[key]
     if (value === undefined || value.length === 0) {
