@@ -1,6 +1,7 @@
 import 'reflect-metadata'
 import { container } from 'tsyringe'
 import { CheckHealthUseCase } from './application/check-health.use-case'
+import { GetSnapshotUseCase } from './application/get-snapshot.use-case'
 import { DiContainer } from './di-container'
 import { DatabaseReadiness } from './infrastructure/database/database-readiness.service'
 import { Env } from './infrastructure/env.service'
@@ -19,7 +20,13 @@ try {
   process.exit(1)
 }
 
-const app = Server.build({ checkHealthUseCase: container.resolve(CheckHealthUseCase) }, { logger: true })
+const app = Server.build(
+  {
+    checkHealthUseCase: container.resolve(CheckHealthUseCase),
+    getSnapshotUseCase: container.resolve(GetSnapshotUseCase),
+  },
+  { logger: true },
+)
 
 try {
   await app.listen({ port: Env.PORT, host: Env.HOST })
