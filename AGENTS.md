@@ -75,6 +75,12 @@
 - A pre-commit hook (managed by husky + lint-staged, see `.husky/pre-commit`) runs Prettier on staged files before every commit. It installs
   automatically on `npm install` via the `prepare` script — never bypass it with `--no-verify`.
 
+## Commit messages
+
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `<type>: <description>` (e.g.
+  `fix: authentication error`, `feat: add temperature gradient overlay`). Common types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`.
+- This applies going forward only — past commits are not rewritten.
+
 ## Testing
 
 ### AAA pattern (Arrange / Act / Assert)
@@ -117,3 +123,17 @@ const partiallyCoveredGrid = {
 
 A fixture file gets the `*.fixture.ts` suffix, following the same layer-suffix convention as the rest of the codebase (see Naming
 Conventions above).
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as committed markdown files under `.scratch/`, one directory per feature. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles, used verbatim as label strings in each issue file's `Status:` line. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root, covering every package under `apps/`. See `docs/agents/domain.md`.
