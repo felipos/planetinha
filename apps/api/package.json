@@ -1,0 +1,27 @@
+{
+  "name": "@vento/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node --import @swc-node/register/esm-register src/main.ts",
+    "dev": "node --watch --import @swc-node/register/esm-register src/main.ts",
+    "build": "tsc",
+    "lint": "eslint .",
+    "test": "node --import @swc-node/register/esm-register --test \"tests/**/*.test.ts\""
+  },
+  "dependencies": {
+    "fastify": "5.12.1",
+    "reflect-metadata": "0.2.2",
+    "tsyringe": "4.10.0"
+  },
+  "devDependencies": {
+    "@swc-node/register": "1.12.1",
+    "@swc/core": "1.16.1",
+    "@types/node": "24.13.3",
+    "typescript": "6.0.3"
+  }
+}

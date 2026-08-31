@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+
+    /* The package runs from source through `@swc-node/register`, so `tsc` type-checks rather
+       than emits — see docs/adr/0004-swc-register-required-by-tsyringe.md. */
+    "noEmit": true,
+
+    /* Decorators, required for tsyringe dependency injection. Not compatible with
+       erasableSyntaxOnly, since decorator/metadata emission is not pure type erasure. */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* Strict type checking */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "tests"]
+}
