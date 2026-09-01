@@ -9,8 +9,11 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
+    // Forwarded to the containerised stack's reverse proxy, the same single address the built
+    // frontend is served from in production — so a developer runs the frontend on their host
+    // against the real api, with hot module reloading intact.
     proxy: {
-      '/api': 'http://localhost:3000',
+      '/api': 'http://localhost:8080',
     },
   },
 })

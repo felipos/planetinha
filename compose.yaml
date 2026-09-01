@@ -1,3 +1,11 @@
+# The whole stack: Postgres, the api, the worker, and a reverse proxy serving the built frontend.
+#
+# Nothing here migrates or seeds the database. Both steps are run explicitly from the host against
+# the published Postgres port, and the api and the worker fail fast with an instruction naming the
+# step that was skipped — see docs/running.md.
+#
+# The dev frontend is deliberately NOT containerised: run it on the host with `npm run dev
+# --workspace @vento/web`, which proxies the API path to this stack and keeps hot module reloading.
 services:
   postgres:
     image: postgres:18.3-alpine
@@ -16,6 +24,67 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: npm run start
+    environment:
+      # The container's connection string, reaching Postgres by service name. The host's lives in
+      # apps/api/.env and points at the published port instead — two values on purpose, kept
+      # apart so neither context can read the other's.
+      DATABASE_URL: postgres://vento:vento@postgres:5432/vento
+      OPEN_METEO_FORECAST_URL: https://api.open-meteo.com/v1/forecast
+      PORT: '3000'
+    # No published port: everything reaches the api through the proxy, on one address. That is
+    # also what lets `docker compose up --scale api=3` work without a host port collision.
+    expose:
+      - '3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # Cheap enough to run every few seconds: the health endpoint reads no Snapshot, Forecast,
+      # or Grid Point.
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    # The same image as the api, differing only by this line. The worker is its own service and is
+    # never scaled: exactly one process may make upstream calls, because the whole Budget
+    # accounting rests on there being a single accountable caller.
+    command: npm run start:worker
+    environment:
+      DATABASE_URL: postgres://vento:vento@postgres:5432/vento
+      OPEN_METEO_FORECAST_URL: https://api.open-meteo.com/v1/forecast
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  proxy:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - '8080:80'
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
   postgres-data:
