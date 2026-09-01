@@ -31,11 +31,13 @@
 - Directories and files are `kebab-case`. No `PascalCase` or `camelCase` filenames or directory names anywhere in the project
   (`data-status-banner/`, not `DataStatusBanner/`).
 - A file that plays a specific architectural role carries a suffix naming that role:
-  - Use case → `*.use-case.ts` (e.g. `fetch-temperature-grid.use-case.ts`)
-  - Data source → `*.data-source.ts` (e.g. `open-meteo-temperature.data-source.ts`)
+  - Use case → `*.use-case.ts` (e.g. `fetch-snapshot.use-case.ts`)
+  - Data source → `*.data-source.ts` (e.g. `vento-snapshot.data-source.ts`)
   - Port (interface) → `*.port.ts`
   - Service → `*.service.ts` (e.g. `http-client.service.ts`, `env.service.ts`)
   - Validator → `*.validator.ts`
+  - Repository (api only) → `*.repository.ts` (e.g. `snapshot.repository.ts`)
+  - HTTP route (api only) → `*.route.ts` (e.g. `snapshot.route.ts`)
   - React hook → `*.hook.ts`
   - React component → `*.component.tsx`
   - Test fixture → `*.fixture.ts`
@@ -46,22 +48,41 @@
 - Within `domain/`, stateless calculation/algorithm classes (a color scale, an interpolation routine, a grid generator) live under
   `domain/utils/`, kept separate from the models/validators/state-shape types at the `domain/` root.
 
+## Workspaces
+
+The repo is a two-package workspace, and both packages follow the same layering, dependency injection, and file-role naming suffixes — there
+is one architecture to learn. `apps/api` differs from `apps/web` in exactly four ways:
+
+- It runs TypeScript through `@swc-node/register`, which is not a free choice: tsyringe needs `emitDecoratorMetadata`, and the obvious
+  modernisations fail — one at parse time, one silently at runtime. See `docs/adr/0004-swc-register-required-by-tsyringe.md` before changing
+  the loader, the test command, or the Dockerfile.
+- Its test runner is Node's built-in one (`node:test`), not Vitest.
+- Its presentation layer is HTTP routes rather than React, and it adds the `*.repository.ts` and `*.route.ts` role suffixes.
+- **Every dependency it adds is pinned to an exact version.** `apps/web`'s existing ranges are deliberately left alone; the pinning rule
+  applies going forward.
+
+`apps/api` is one package with two entrypoints — `src/main.ts` serves, `src/worker.ts` sweeps — and one image. Exactly one process may make
+upstream calls, so nothing that calls the weather provider may be moved into the api's request path.
+
 ## HTTP calls
 
-- Every data source that needs to make an HTTP call goes through `HttpClient` (`src/infrastructure/http-client.service.ts`) instead of
-  calling `fetch` directly. `HttpClient` is a thin wrapper around `fetch` that also handles retry-with-backoff on HTTP 429 and abort
-  propagation, so every data source gets that behavior for free instead of reimplementing it.
+- Every data source that needs to make an HTTP call goes through `HttpClient` (`src/infrastructure/http-client.service.ts` in either
+  package) instead of calling `fetch` directly. `HttpClient` is a thin wrapper around `fetch` that also handles retry-with-backoff on HTTP
+  429 and abort propagation, so every data source gets that behavior for free instead of reimplementing it.
 - Data-source-specific concerns (batching, response shape, mapping to domain models) stay in the data source itself — `HttpClient` only
   knows about HTTP, never about any particular API's response format.
 
 ## Environment variables
 
-- Environment variables live in `.env` (git-ignored; see `.env.example` for the required keys). Vite only exposes vars prefixed `VITE_` to
-  client code, so every var meant to be read at runtime must use that prefix in `.env` (e.g. `VITE_OPEN_METEO_FORECAST_URL`).
-- Never read `import.meta.env` directly outside `src/infrastructure/env.service.ts`. Add a typed static getter to the `Env` class for every
-  variable instead, so the rest of the codebase gets it with autocomplete: `Env.OPEN_METEO_FORECAST_URL`. The getter's name drops the
-  `VITE_` prefix — that prefix is a Vite implementation detail the rest of the app shouldn't need to know about.
-- New variables also need a matching entry in `src/vite-env.d.ts` (for typing) and `.env.example` (for onboarding).
+- `apps/web` has **no** environment variables at all, and should not gain any. It calls a relative API path in every environment, so there
+  is no base URL to configure and no CORS to set up.
+- `apps/api` reads its variables through one typed accessor: never read `process.env` outside `src/infrastructure/env.service.ts`. Add a
+  static getter to the `Env` class instead, so the rest of the package gets it with autocomplete: `Env.DATABASE_URL`. A new variable also
+  needs an entry in `apps/api/.env.example`.
+- `apps/api/.env` is read only on the host. Containers get their values from `compose.yaml`. The database connection string necessarily has
+  two different values, and the two live in those two separate places on purpose — see `docs/running.md`.
+- Values that a use case depends on (Slice size, the Sweep interval) are read from `Env` in `di-container.ts` and injected, so a use case
+  depends on the value rather than on where it came from.
 
 ## Comments
 
@@ -93,7 +114,7 @@ it('propagates a rejection from the data source', async () => {
   const dataSource = createFakeDataSource(async () => {
     throw new Error('Open-Meteo indisponível')
   })
-  const useCase = new FetchTemperatureGridUseCase(dataSource)
+  const useCase = new FetchSnapshotUseCase(dataSource)
 
   // Act
   const resultPromise = useCase.execute()
@@ -113,11 +134,11 @@ Import shared fixtures from `tests/fixtures/` (create the folder the first time 
 Prefer spreading to override specific fields instead of duplicating the whole object:
 
 ```typescript
-import { mockTemperatureGrid } from '../fixtures/temperature-grid.fixture'
+import { mockSnapshot } from '../fixtures/snapshot.fixture'
 
-const partiallyCoveredGrid = {
-  ...mockTemperatureGrid,
-  expectedPointCount: 100,
+const partiallyCoveredSnapshot = {
+  ...mockSnapshot,
+  coverage: { total: 2664, withData: 1_204 },
 }
 ```
 
@@ -137,3 +158,8 @@ The five canonical triage roles, used verbatim as label strings in each issue fi
 ### Domain docs
 
 Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root, covering every package under `apps/`. See `docs/agents/domain.md`.
+
+### Running the stack
+
+`docs/running.md` covers bringing the stack up, migrating, seeding, and running the dev frontend against it. Migrations and the seed are
+manual by design: never make a process run either as a side effect of starting.
