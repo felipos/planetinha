@@ -28,12 +28,12 @@ from the data source swap.
 
 **Status:** ready-for-agent
 
-- [ ] The globe renders temperature for the whole Earth at 5° Resolution, read from the response rather than from a constant
-- [ ] The frontend calls a relative API path in both development and production, with no base URL variable and no CORS configuration
-- [ ] The upstream provider adapter, the mock adapter, their tests, and their environment variables are gone, and nothing in the frontend
+- [x] The globe renders temperature for the whole Earth at 5° Resolution, read from the response rather than from a constant
+- [x] The frontend calls a relative API path in both development and production, with no base URL variable and no CORS configuration
+- [x] The upstream provider adapter, the mock adapter, their tests, and their environment variables are gone, and nothing in the frontend
       names a weather provider
-- [ ] The response is validated on arrival, and a malformed response becomes a stated error rather than a broken render
-- [ ] A Grid Point with No Data stays distinct from a real temperature of zero all the way to the render
-- [ ] The automatic refresh runs every 5 minutes
-- [ ] The existing component tests and the use-case integration test cover the swap through the unchanged port — no new test seam is
+- [x] The response is validated on arrival, and a malformed response becomes a stated error rather than a broken render
+- [x] A Grid Point with No Data stays distinct from a real temperature of zero all the way to the render
+- [x] The automatic refresh runs every 5 minutes
+- [x] The existing component tests and the use-case integration test cover the swap through the unchanged port — no new test seam is
       introduced

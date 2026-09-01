@@ -31,13 +31,13 @@ compose. The rest of the stack joins it in ticket `11`.
 
 **Status:** ready-for-agent
 
-- [ ] A migration creates the Grid Point, Forecast, and Sweep tables, including the index on Valid At, and is run explicitly — no process
+- [x] A migration creates the Grid Point, Forecast, and Sweep tables, including the index on Valid At, and is run explicitly — no process
       migrates on boot
-- [ ] The seed command populates exactly 2,522 Grid Points at 5° Resolution, each pole appearing once, each row recording its Resolution
-- [ ] Re-running the seed is safe and does not duplicate Grid Points
-- [ ] The Grid enumeration is covered by a test that needs no database: point count, poles present exactly once, Resolution recorded
-- [ ] The api fails fast at boot with an actionable instruction naming the missing step when the schema is absent
-- [ ] The api fails fast at boot with an actionable instruction when the Grid has not been seeded, rather than starting and serving in that
+- [x] The seed command populates exactly 2,522 Grid Points at 5° Resolution, each pole appearing once, each row recording its Resolution
+- [x] Re-running the seed is safe and does not duplicate Grid Points
+- [x] The Grid enumeration is covered by a test that needs no database: point count, poles present exactly once, Resolution recorded
+- [x] The api fails fast at boot with an actionable instruction naming the missing step when the schema is absent
+- [x] The api fails fast at boot with an actionable instruction when the Grid has not been seeded, rather than starting and serving in that
       state
-- [ ] A single compose command brings up Postgres, and the migration and seed run against it from the host
-- [ ] The host connection string and the container connection string live in separate places, neither readable from the other's context
+- [x] A single compose command brings up Postgres, and the migration and seed run against it from the host
+- [x] The host connection string and the container connection string live in separate places, neither readable from the other's context

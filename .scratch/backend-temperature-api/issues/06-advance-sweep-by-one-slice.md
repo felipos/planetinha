@@ -27,12 +27,12 @@ without adding confidence.
 
 **Status:** ready-for-agent
 
-- [ ] A Tick with an open Sweep advances the cursor by exactly one Slice and writes that Slice's Forecasts
-- [ ] A Tick with no open Sweep and one due starts a Sweep, recording its start time and its total Grid Point count
-- [ ] A Tick with no open Sweep and none due does nothing
-- [ ] Replaying a Slice produces no duplicate Forecasts, and a fresher Forecast for an hour already stored overwrites it
-- [ ] A Slice whose upstream call fails is logged and skipped, the failed count is updated, and the Sweep continues to the next Slice
-- [ ] The cursor does not advance for a Slice that did not commit
-- [ ] Upstream calls made and Rate Limit hits are accumulated on the Sweep row
-- [ ] Slice size is configuration rather than a hardcoded constant
-- [ ] Every case is driven through the use case with a fake forecast source and a fake repository — no database, no network
+- [x] A Tick with an open Sweep advances the cursor by exactly one Slice and writes that Slice's Forecasts
+- [x] A Tick with no open Sweep and one due starts a Sweep, recording its start time and its total Grid Point count
+- [x] A Tick with no open Sweep and none due does nothing
+- [x] Replaying a Slice produces no duplicate Forecasts, and a fresher Forecast for an hour already stored overwrites it
+- [x] A Slice whose upstream call fails is logged and skipped, the failed count is updated, and the Sweep continues to the next Slice
+- [x] The cursor does not advance for a Slice that did not commit
+- [x] Upstream calls made and Rate Limit hits are accumulated on the Sweep row
+- [x] Slice size is configuration rather than a hardcoded constant
+- [x] Every case is driven through the use case with a fake forecast source and a fake repository — no database, no network

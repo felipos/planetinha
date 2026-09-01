@@ -23,10 +23,10 @@ differences. New backend dependencies are pinned exactly; the web app's existing
 
 **Status:** ready-for-agent
 
-- [ ] The migration and seed procedure is documented as an ordered set of commands, stating that the steps are manual by design
-- [ ] The two connection strings are documented, including which context reads which and why they are kept apart
-- [ ] Running the dev frontend against the containerised api is documented
-- [ ] A freshly deployed instance's behaviour is documented: empty globe, Coverage climbing, roughly 26 minutes, no seeded sample data
-- [ ] The Sweep counters are documented for an operator, with what they are for
-- [ ] The repo's agent guidelines and architecture guide cover the api package's conventions and how they differ from the web app's
-- [ ] Someone following the documentation on a fresh checkout reaches a working globe without reading any source
+- [x] The migration and seed procedure is documented as an ordered set of commands, stating that the steps are manual by design
+- [x] The two connection strings are documented, including which context reads which and why they are kept apart
+- [x] Running the dev frontend against the containerised api is documented
+- [x] A freshly deployed instance's behaviour is documented: empty globe, Coverage climbing, roughly 26 minutes, no seeded sample data
+- [x] The Sweep counters are documented for an operator, with what they are for
+- [x] The repo's agent guidelines and architecture guide cover the api package's conventions and how they differ from the web app's
+- [x] Someone following the documentation on a fresh checkout reaches a working globe without reading any source

@@ -19,9 +19,9 @@ response. No network, no database, no listening port.
 
 **Status:** ready-for-agent
 
-- [ ] The api package builds, lints, and tests through the repo's task runner alongside the web package
-- [ ] The health endpoint answers successfully without reading any Snapshot, Forecast, or Grid Point
-- [ ] A test injects a request into the server instance in-process and asserts the health response — no port is bound, no network is reached
-- [ ] A class resolved from the container with a concrete-class constructor dependency resolves correctly at runtime, in both the test
+- [x] The api package builds, lints, and tests through the repo's task runner alongside the web package
+- [x] The health endpoint answers successfully without reading any Snapshot, Forecast, or Grid Point
+- [x] A test injects a request into the server instance in-process and asserts the health response — no port is bound, no network is reached
+- [x] A class resolved from the container with a concrete-class constructor dependency resolves correctly at runtime, in both the test
       command and the start command — this is the failure ADR-0004 exists to prevent, and it does not surface at build time
-- [ ] Every dependency added by this ticket is pinned to an exact version
+- [x] Every dependency added by this ticket is pinned to an exact version

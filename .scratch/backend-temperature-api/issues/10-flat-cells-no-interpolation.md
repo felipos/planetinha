@@ -25,10 +25,10 @@ browser.
 
 **Status:** ready-for-agent
 
-- [ ] Every Cell renders its own Grid Point's Forecast as a flat block, with no blending between neighbours
-- [ ] A Cell with No Data is visibly distinct from a cold Cell and shows no scale colour at all
-- [ ] Clicking the globe reports the containing Cell's Grid Point and its real coordinates
-- [ ] The interpolated flag is gone from the selected-point model and from the inspector
-- [ ] The poles render like everywhere else, with no hole at the top or bottom of the globe
-- [ ] The interpolator is reduced to coordinate rounding, longitude wrapping, and key lookup — the IDW routine and its tests are deleted,
+- [x] Every Cell renders its own Grid Point's Forecast as a flat block, with no blending between neighbours
+- [x] A Cell with No Data is visibly distinct from a cold Cell and shows no scale colour at all
+- [x] Clicking the globe reports the containing Cell's Grid Point and its real coordinates
+- [x] The interpolated flag is gone from the selected-point model and from the inspector
+- [x] The poles render like everywhere else, with no hole at the top or bottom of the globe
+- [x] The interpolator is reduced to coordinate rounding, longitude wrapping, and key lookup — the IDW routine and its tests are deleted,
       and the coordinate-helper tests still pass

@@ -15,8 +15,8 @@ field keeps its meaning for now; it becomes Coverage in ticket `09`.
 
 **Status:** ready-for-agent
 
-- [ ] The temperature value type is named for a Forecast, and the hour it describes is named Valid At — the glossary's avoided terms
+- [x] The temperature value type is named for a Forecast, and the hour it describes is named Valid At — the glossary's avoided terms
       (reading, observation, measurement, sample, `observedAt`, timestamp) appear nowhere in `apps/web`
-- [ ] The aggregate holding every value for one hour is named for a Snapshot, not a grid — "Grid" is left to mean positions only
-- [ ] Test names and fixture names use the same vocabulary
-- [ ] Build, lint, and the full test suite pass with no behavioural change: the globe renders exactly as it did before
+- [x] The aggregate holding every value for one hour is named for a Snapshot, not a grid — "Grid" is left to mean positions only
+- [x] Test names and fixture names use the same vocabulary
+- [x] Build, lint, and the full test suite pass with no behavioural change: the globe renders exactly as it did before

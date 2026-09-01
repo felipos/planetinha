@@ -16,10 +16,10 @@ refresh, a new hour's Forecasts appear within a few minutes rather than lagging 
 
 **Status:** ready-for-agent
 
-- [ ] The viewer is told what percentage of the Grid has data for the hour being shown, taken from the response's Coverage counts
-- [ ] On an instance whose first Sweep has not completed, the message reads as an initial data load with its percentage, not as a failure or
+- [x] The viewer is told what percentage of the Grid has data for the hour being shown, taken from the response's Coverage counts
+- [x] On an instance whose first Sweep has not completed, the message reads as an initial data load with its percentage, not as a failure or
       a partial-coverage warning
-- [ ] That percentage climbs across refreshes while the first Sweep runs
-- [ ] Once a Sweep has completed, a full Snapshot shows no Coverage message at all
-- [ ] A backend that becomes briefly unreachable leaves the last good Snapshot on screen with a stale-data notice, never a blank globe
-- [ ] Each distinct state is covered by a component test rendering with a fake use case
+- [x] That percentage climbs across refreshes while the first Sweep runs
+- [x] Once a Sweep has completed, a full Snapshot shows no Coverage message at all
+- [x] A backend that becomes briefly unreachable leaves the last good Snapshot on screen with a stale-data notice, never a blank globe
+- [x] Each distinct state is covered by a component test rendering with a fake use case

@@ -24,11 +24,11 @@ moves here.
 
 **Status:** ready-for-agent
 
-- [ ] A request for a Slice of Grid Points returns one hourly Forecast series per Grid Point, covering two forecast days
-- [ ] Hourly arrays are aligned positionally to the comma-separated coordinates sent, and a Slice of 100 Grid Points maps back to the right
+- [x] A request for a Slice of Grid Points returns one hourly Forecast series per Grid Point, covering two forecast days
+- [x] Hourly arrays are aligned positionally to the comma-separated coordinates sent, and a Slice of 100 Grid Points maps back to the right
       100 Grid Points in the right order
-- [ ] A `null` temperature anywhere in the series maps to No Data and never to zero
-- [ ] A provider error body surfaces as a failure with a human-readable message, rather than being parsed as data
-- [ ] Rate Limit responses are retried with backoff by the HTTP client, and an abort interrupts both in-flight requests and backoff waits
-- [ ] All of the above is covered with the HTTP client mocked — no network in the test loop
-- [ ] Every dependency added by this ticket is pinned to an exact version
+- [x] A `null` temperature anywhere in the series maps to No Data and never to zero
+- [x] A provider error body surfaces as a failure with a human-readable message, rather than being parsed as data
+- [x] Rate Limit responses are retried with backoff by the HTTP client, and an abort interrupts both in-flight requests and backoff waits
+- [x] All of the above is covered with the HTTP client mocked — no network in the test loop
+- [x] Every dependency added by this ticket is pinned to an exact version

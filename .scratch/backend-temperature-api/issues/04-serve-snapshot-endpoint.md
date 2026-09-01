@@ -27,12 +27,12 @@ the one that would catch a serialization or schema mistake. No database and no n
 
 **Status:** ready-for-agent
 
-- [ ] The endpoint returns a fully covered Snapshot with every Grid Point present, its Valid At, its Resolution, the Coverage counts, and
+- [x] The endpoint returns a fully covered Snapshot with every Grid Point present, its Valid At, its Resolution, the Coverage counts, and
       the sweep block
-- [ ] Each stored pole Grid Point appears at all 72 longitudes in the response, and the Coverage total is 2,664
-- [ ] A partially covered hour returns `null` for the Grid Points with No Data and a Coverage count that reflects only the ones with a
+- [x] Each stored pole Grid Point appears at all 72 longitudes in the response, and the Coverage total is 2,664
+- [x] A partially covered hour returns `null` for the Grid Points with No Data and a Coverage count that reflects only the ones with a
       temperature
-- [ ] Before the first Sweep completes, the endpoint returns success with every temperature `null` and Coverage zero — not an error
-- [ ] An hour with no Forecasts falls back to the most recent hour that has data, and the response reports that hour as its Valid At
-- [ ] Every Forecast carries its own Fetched At, and no top-level Fetched At exists anywhere in the response
-- [ ] Every case above is asserted through the real route with a fake repository, with no database and no network
+- [x] Before the first Sweep completes, the endpoint returns success with every temperature `null` and Coverage zero — not an error
+- [x] An hour with no Forecasts falls back to the most recent hour that has data, and the response reports that hour as its Valid At
+- [x] Every Forecast carries its own Fetched At, and no top-level Fetched At exists anywhere in the response
+- [x] Every case above is asserted through the real route with a fake repository, with no database and no network

@@ -23,12 +23,12 @@ Budget assumptions from ADR-0001 against what the provider actually does.
 
 **Status:** ready-for-agent
 
-- [ ] The worker starts from the same image and codebase as the api, with a different entrypoint and script, and is a separate process
-- [ ] It advances the open Sweep once per Tick on a fixed 60-second interval, and both the interval and the Slice size are configuration
-- [ ] Sweeps start twice a day
-- [ ] Started against a seeded database, it drives a Sweep to completion and the temperature endpoint's Coverage climbs from zero to full
-- [ ] Killing the worker mid-Sweep and restarting it resumes from the cursor, replaying at most the interrupted Slice, and does not restart
+- [x] The worker starts from the same image and codebase as the api, with a different entrypoint and script, and is a separate process
+- [x] It advances the open Sweep once per Tick on a fixed 60-second interval, and both the interval and the Slice size are configuration
+- [x] Sweeps start twice a day
+- [x] Started against a seeded database, it drives a Sweep to completion and the temperature endpoint's Coverage climbs from zero to full
+- [x] Killing the worker mid-Sweep and restarting it resumes from the cursor, replaying at most the interrupted Slice, and does not restart
       the Sweep from the beginning
-- [ ] It fails fast at boot with an actionable instruction when the schema is missing or the Grid has not been seeded
-- [ ] Logging is structured, and every Rate Limit response is logged alongside the Slice that triggered it
-- [ ] The Sweep row's upstream call count and Rate Limit hits can be queried after a real Sweep and compared against the Budget assumption
+- [x] It fails fast at boot with an actionable instruction when the schema is missing or the Grid has not been seeded
+- [x] Logging is structured, and every Rate Limit response is logged alongside the Slice that triggered it
+- [x] The Sweep row's upstream call count and Rate Limit hits can be queried after a real Sweep and compared against the Budget assumption
