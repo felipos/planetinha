@@ -16,7 +16,7 @@ function formatCoordinate(value: number, positiveSuffix: string, negativeSuffix:
 /**
  * Accessible panel with the numeric temperature value plus the Grid Point it belongs to. The
  * coordinates are the containing Cell's own, not the position clicked, so the number is never
- * attributed to a place Vento did not sample.
+ * attributed to a place Planetinha did not sample.
  */
 export function PointInspector({ point, onClose }: PointInspectorProps) {
   useEffect(() => {

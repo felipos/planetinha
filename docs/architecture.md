@@ -29,8 +29,8 @@ src/
 │   └── utils/           # Stateless calculation/algorithm classes (color scale, interpolation, grid generation, ...)
 ├── application/        # Use cases + ports (interfaces) + DI tokens
 │   └── ports/           # Interfaces implemented by infrastructure
-├── infrastructure/      # Concrete adapters: HttpClient, Env, the client for Vento's own API
-│   └── vento/
+├── infrastructure/      # Concrete adapters: HttpClient, Env, the client for Planetinha's own API
+│   └── planetinha/
 ├── di-container.ts      # tsyringe container registration — the only file allowed to call container.register*
 └── presentation/        # React components and hooks (the only layer allowed to know about React/DOM)
     ├── components/
@@ -227,7 +227,7 @@ constructor-injecting `HttpClient` when they need it:
 
 ```typescript
 @injectable()
-export class VentoSnapshotDataSource implements SnapshotDataSourcePort {
+export class PlanetinhaSnapshotDataSource implements SnapshotDataSourcePort {
   constructor(private readonly httpClient: HttpClient) {}
 
   async fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
@@ -254,14 +254,14 @@ The only file allowed to call `container.register*`. Decides which concrete port
 ```typescript
 export class DiContainer {
   static setup(): void {
-    container.registerSingleton(TOKENS.SnapshotDataSourcePort, VentoSnapshotDataSource)
+    container.registerSingleton(TOKENS.SnapshotDataSourcePort, PlanetinhaSnapshotDataSource)
   }
 }
 ```
 
 There is one implementation and no mode switch. The frontend's mock adapter and its adapter for the weather provider were both deleted: the
-browser talks to Vento's backend or to nothing at all — see `docs/adr/0002-backend-is-the-sole-open-meteo-client.md`. In the api, this is
-also the only place that reads `Env` into injected configuration.
+browser talks to Planetinha's backend or to nothing at all — see `docs/adr/0002-backend-is-the-sole-open-meteo-client.md`. In the api, this
+is also the only place that reads `Env` into injected configuration.
 
 ---
 
@@ -312,7 +312,7 @@ This project does **not** use a `Result<T, E>` return type on every function. In
 ```typescript
 // ✅ Correct — throw at the boundary, convert to explicit state at the presentation edge
 @injectable()
-export class VentoSnapshotDataSource implements SnapshotDataSourcePort {
+export class PlanetinhaSnapshotDataSource implements SnapshotDataSourcePort {
   async fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
     const body = await this.httpClient.getJson<unknown>(SNAPSHOT_PATH, { signal })
     return SnapshotResponseValidator.toSnapshot(body) // throws a stated error on a malformed body
@@ -376,12 +376,12 @@ the port via `@inject(TOKENS.WindDataSourcePort)`, expose `execute()`.
 
 ### 4. Implement the adapter(s)
 
-Create `src/infrastructure/vento/vento-wind.data-source.ts`, an `@injectable()` class implementing `WindDataSourcePort`, injecting
+Create `src/infrastructure/planetinha/planetinha-wind.data-source.ts`, an `@injectable()` class implementing `WindDataSourcePort`, injecting
 `HttpClient` for the HTTP call and validating the response body before returning it.
 
 Note what does **not** happen here: the frontend does not gain an adapter for a weather provider, and does not gain a mock one either. New
-data comes from Vento's own backend, and any mock belongs there — see `docs/adr/0002-backend-is-the-sole-open-meteo-client.md`. On the api
-side, the provider-facing adapter goes in `src/infrastructure/<provider>/` and is called only from the worker's path.
+data comes from Planetinha's own backend, and any mock belongs there — see `docs/adr/0002-backend-is-the-sole-open-meteo-client.md`. On the
+api side, the provider-facing adapter goes in `src/infrastructure/<provider>/` and is called only from the worker's path.
 
 ### 5. Register it in the DI container
 

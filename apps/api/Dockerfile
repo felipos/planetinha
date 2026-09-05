@@ -19,7 +19,7 @@ COPY apps/web/package.json apps/web/
 # `@swc-node/register`, so its loader is a runtime requirement here rather than a build-time one.
 # Install scripts are skipped because the only one is the repo's git-hook setup, which has nothing
 # to do with an image.
-RUN npm ci --workspace @vento/api --include-workspace-root --ignore-scripts
+RUN npm ci --workspace @planetinha/api --include-workspace-root --ignore-scripts
 
 COPY apps/api apps/api
 

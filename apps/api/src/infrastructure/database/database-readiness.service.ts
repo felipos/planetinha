@@ -42,7 +42,7 @@ export class DatabaseReadiness {
     } catch (error) {
       if (isUndefinedTable(error)) {
         throw new Error(
-          'The database schema is missing. Run `npm run db:migrate --workspace @vento/api` from the host before starting this process.',
+          'The database schema is missing. Run `npm run db:migrate --workspace @planetinha/api` from the host before starting this process.',
         )
       }
       throw error
@@ -50,7 +50,7 @@ export class DatabaseReadiness {
 
     if (gridPointCount === 0) {
       throw new Error(
-        'The Grid has not been seeded, so there are no Grid Points to sweep or serve. Run `npm run db:seed --workspace @vento/api` from the host before starting this process.',
+        'The Grid has not been seeded, so there are no Grid Points to sweep or serve. Run `npm run db:seed --workspace @planetinha/api` from the host before starting this process.',
       )
     }
   }

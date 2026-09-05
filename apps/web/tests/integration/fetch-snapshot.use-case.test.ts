@@ -43,7 +43,7 @@ describe('FetchSnapshotUseCase', () => {
   it('propagates a rejection from the data source (error path — never fails silently)', async () => {
     // Arrange
     const dataSource = createFakeDataSource(async () => {
-      throw new Error('a API do Vento está indisponível')
+      throw new Error('a API do Planetinha está indisponível')
     })
     const useCase = new FetchSnapshotUseCase(dataSource)
 
@@ -51,7 +51,7 @@ describe('FetchSnapshotUseCase', () => {
     const resultPromise = useCase.execute()
 
     // Assert
-    await expect(resultPromise).rejects.toThrow('a API do Vento está indisponível')
+    await expect(resultPromise).rejects.toThrow('a API do Planetinha está indisponível')
   })
 
   it('resolves again after a prior failure (stale-error → success retry path)', async () => {

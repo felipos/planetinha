@@ -10,10 +10,10 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 # Install scripts are skipped: the only one is the repo's git-hook setup, which has nothing to do
 # with an image.
-RUN npm ci --workspace @vento/web --include-workspace-root --ignore-scripts
+RUN npm ci --workspace @planetinha/web --include-workspace-root --ignore-scripts
 
 COPY apps/web apps/web
-RUN npm run build --workspace @vento/web
+RUN npm run build --workspace @planetinha/web
 
 # No native dependencies here, so Alpine is free of the musl concern that rules it out for the api.
 FROM nginx:1.29.4-alpine

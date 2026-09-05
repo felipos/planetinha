@@ -1,4 +1,4 @@
-# Running Vento
+# Running Planetinha
 
 Everything here is done from a fresh checkout, in order. It ends with a working globe.
 
@@ -31,8 +31,8 @@ by design, not a failure — see the next section — and `docker compose up -d`
 ## 3. Migrate and seed — manual by design
 
 ```sh
-npm run db:migrate --workspace @vento/api
-npm run db:seed --workspace @vento/api
+npm run db:migrate --workspace @planetinha/api
+npm run db:seed --workspace @planetinha/api
 ```
 
 **No process migrates or seeds as a side effect of starting.** A schema change is a decision, and a process that quietly applies one on boot
@@ -45,7 +45,7 @@ them.
 If you skipped a step, the api and the worker tell you which:
 
 ```
-The database schema is missing. Run `npm run db:migrate --workspace @vento/api` from the host
+The database schema is missing. Run `npm run db:migrate --workspace @planetinha/api` from the host
 before starting this process.
 ```
 
@@ -53,10 +53,10 @@ before starting this process.
 
 There are necessarily two, and they are kept in separate places so neither context can read the other's:
 
-| Who reads it                                           | Where it lives  | Value                                         |
-| ------------------------------------------------------ | --------------- | --------------------------------------------- |
-| Host tooling — `db:migrate`, `db:seed`, a host-run api | `apps/api/.env` | `postgres://vento:vento@localhost:5432/vento` |
-| The api and worker containers                          | `compose.yaml`  | `postgres://vento:vento@postgres:5432/vento`  |
+| Who reads it                                           | Where it lives  | Value                                                        |
+| ------------------------------------------------------ | --------------- | ------------------------------------------------------------ |
+| Host tooling — `db:migrate`, `db:seed`, a host-run api | `apps/api/.env` | `postgres://planetinha:planetinha@localhost:5432/planetinha` |
+| The api and worker containers                          | `compose.yaml`  | `postgres://planetinha:planetinha@postgres:5432/planetinha`  |
 
 They differ in one word — `localhost` versus `postgres` — because a container reaches Postgres by service name on the compose network, while
 your shell reaches it on the port compose publishes. This is the step most likely to be got wrong silently: a container handed the host's
@@ -67,7 +67,7 @@ string cannot resolve `localhost` to Postgres, and host tooling handed the conta
 The dev frontend is deliberately **not** containerised, so hot module reloading keeps working:
 
 ```sh
-npm run dev --workspace @vento/web
+npm run dev --workspace @planetinha/web
 ```
 
 It serves on <http://localhost:5173> and forwards `/api` to the stack on port 8080. The frontend calls a relative path in every environment
@@ -95,7 +95,7 @@ that is accepted for now, and worth knowing before two people leave the stack up
 Each Sweep records what it spent, in the `sweeps` table:
 
 ```sh
-docker compose exec postgres psql -U vento -d vento -c \
+docker compose exec postgres psql -U planetinha -d planetinha -c \
   "SELECT id, status, started_at, completed_at, fetched_grid_point_count, failed_grid_point_count,
           upstream_calls_made, rate_limit_hits, last_error
      FROM sweeps ORDER BY id DESC LIMIT 5;"
@@ -117,7 +117,7 @@ npm run build   # build every workspace
 npm run lint    # lint every workspace
 npm run test    # test every workspace
 
-npm run db:generate --workspace @vento/api   # regenerate migration SQL after a schema change
-npm run start --workspace @vento/api         # run the api on the host instead of in a container
-npm run start:worker --workspace @vento/api  # run the worker on the host
+npm run db:generate --workspace @planetinha/api   # regenerate migration SQL after a schema change
+npm run start --workspace @planetinha/api         # run the api on the host instead of in a container
+npm run start:worker --workspace @planetinha/api  # run the worker on the host
 ```

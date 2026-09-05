@@ -3,7 +3,7 @@ import type { Forecast } from '../../domain/forecast'
 import type { Snapshot } from '../../domain/snapshot'
 
 /**
- * The wire contract with Vento's api, duplicated by hand on this side rather than shared
+ * The wire contract with Planetinha's api, duplicated by hand on this side rather than shared
  * through a package — a validator here is what catches drift, since nothing else would.
  */
 interface SnapshotForecastBody {

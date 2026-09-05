@@ -20,7 +20,7 @@ let basemapImagePromise: Promise<HTMLImageElement> | null = null
  *
  * Every Cell is painted as a flat block of its own Grid Point's Forecast, and nothing is
  * blended between neighbours: the result is a visibly blocky patchwork, and that is the
- * intended result rather than an unfinished one — the globe shows exactly the values Vento
+ * intended result rather than an unfinished one — the globe shows exactly the values Planetinha
  * fetched and none it invented. A Cell with No Data is fully transparent, showing the plain
  * base map through it, so it reads as a genuine hole instead of being smeared over by whatever
  * its neighbours happened to report.

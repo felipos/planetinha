@@ -12,7 +12,7 @@ import { SnapshotResponseValidator } from './snapshot-response.validator'
 const SNAPSHOT_PATH = '/api/snapshot'
 
 /**
- * The only `SnapshotDataSourcePort` implementation: it asks Vento's own backend for a Snapshot
+ * The only `SnapshotDataSourcePort` implementation: it asks Planetinha's own backend for a Snapshot
  * and knows nothing about any weather provider, which is what lets the provider be replaced
  * without touching presentation code.
  *
@@ -22,7 +22,7 @@ const SNAPSHOT_PATH = '/api/snapshot'
  * prevent.
  */
 @injectable()
-export class VentoSnapshotDataSource implements SnapshotDataSourcePort {
+export class PlanetinhaSnapshotDataSource implements SnapshotDataSourcePort {
   constructor(private readonly httpClient: HttpClient) {}
 
   async fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {

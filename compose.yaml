@@ -5,22 +5,22 @@
 # step that was skipped — see docs/running.md.
 #
 # The dev frontend is deliberately NOT containerised: run it on the host with `npm run dev
-# --workspace @vento/web`, which proxies the API path to this stack and keeps hot module reloading.
+# --workspace @planetinha/web`, which proxies the API path to this stack and keeps hot module reloading.
 services:
   postgres:
     image: postgres:18.3-alpine
     environment:
-      POSTGRES_USER: vento
-      POSTGRES_PASSWORD: vento
-      POSTGRES_DB: vento
+      POSTGRES_USER: planetinha
+      POSTGRES_PASSWORD: planetinha
+      POSTGRES_DB: planetinha
     # Published so migrations and the seed can be run from the host, which is the only way they
     # are ever run — no service migrates as a side effect of starting.
     ports:
       - '5432:5432'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U vento -d vento']
+      test: ['CMD-SHELL', 'pg_isready -U planetinha -d planetinha']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -35,7 +35,7 @@ services:
       # The container's connection string, reaching Postgres by service name. The host's lives in
       # apps/api/.env and points at the published port instead — two values on purpose, kept
       # apart so neither context can read the other's.
-      DATABASE_URL: postgres://vento:vento@postgres:5432/vento
+      DATABASE_URL: postgres://planetinha:planetinha@postgres:5432/planetinha
       OPEN_METEO_FORECAST_URL: https://api.open-meteo.com/v1/forecast
       PORT: '3000'
     # No published port: everything reaches the api through the proxy, on one address. That is
@@ -69,7 +69,7 @@ services:
     # accounting rests on there being a single accountable caller.
     command: npm run start:worker
     environment:
-      DATABASE_URL: postgres://vento:vento@postgres:5432/vento
+      DATABASE_URL: postgres://planetinha:planetinha@postgres:5432/planetinha
       OPEN_METEO_FORECAST_URL: https://api.open-meteo.com/v1/forecast
     depends_on:
       postgres:

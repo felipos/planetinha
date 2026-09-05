@@ -8,7 +8,7 @@ import type { Snapshot } from '../domain/snapshot'
  *
  * The point reported is the containing Cell's Grid Point, not the position clicked: that Grid
  * Point is what the number belongs to, and saying so is more useful than naming a coordinate
- * Vento never sampled.
+ * Planetinha never sampled.
  */
 @injectable()
 export class SelectPointUseCase {

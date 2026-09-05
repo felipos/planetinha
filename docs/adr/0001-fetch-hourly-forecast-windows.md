@@ -1,10 +1,10 @@
 # Fetch hourly forecast windows, not current-instant values
 
-Vento displays one hour of temperature at a time, but each Sweep requests `hourly=temperature_2m&forecast_days=2` and stores all 48 hourly
-values per Grid Point. This looks like waste until you see the arithmetic: Open-Meteo weights a call by the number of locations requested,
-so a whole-planet refresh of instantaneous values must re-sweep constantly to stay current, while a forecast window makes one Sweep feed two
-days of display. The free tier allows 10,000 calls/day; the old approach (684 points, refreshed every 30 minutes) needed roughly 33,000,
-which is why the application was producing HTTP 429s and incomplete grids.
+Planetinha displays one hour of temperature at a time, but each Sweep requests `hourly=temperature_2m&forecast_days=2` and stores all 48
+hourly values per Grid Point. This looks like waste until you see the arithmetic: Open-Meteo weights a call by the number of locations
+requested, so a whole-planet refresh of instantaneous values must re-sweep constantly to stay current, while a forecast window makes one
+Sweep feed two days of display. The free tier allows 10,000 calls/day; the old approach (684 points, refreshed every 30 minutes) needed
+roughly 33,000, which is why the application was producing HTTP 429s and incomplete grids.
 
 ## Consequences
 

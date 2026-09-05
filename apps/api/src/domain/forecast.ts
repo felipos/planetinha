@@ -9,7 +9,7 @@ export interface Forecast {
   readonly gridPointId: number
   readonly validAt: Date
   readonly temperatureCelsius: number | null
-  /** The moment Vento retrieved this value. Independent of `validAt`, and per Forecast: one
+  /** The moment Planetinha retrieved this value. Independent of `validAt`, and per Forecast: one
    * retrieval yields many Valid At hours, and a Snapshot may hold rows written by different
    * Sweeps. */
   readonly fetchedAt: Date

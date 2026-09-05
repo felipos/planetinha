@@ -8,7 +8,7 @@ export interface LoadingOverlayProps {
 
 /**
  * Blocking modal shown only during the first fetch (`status.kind === 'loading'`) — when there's
- * no Forecast yet to display. A single request to Vento's own backend answers with the whole
+ * no Forecast yet to display. A single request to Planetinha's own backend answers with the whole
  * Grid, so this is a couple of seconds rather than a wait to be explained away.
  */
 export function LoadingOverlay({ status }: LoadingOverlayProps) {
@@ -22,7 +22,7 @@ export function LoadingOverlay({ status }: LoadingOverlayProps) {
         <Loader2 className="loading-overlay__spinner" size={28} aria-hidden="true" />
         <p className="loading-overlay__title">Carregando dados de temperatura globais…</p>
         <p className="loading-overlay__subtitle">
-          Buscando a temperatura de todo o planeta no servidor do Vento. Isso costuma levar apenas alguns
+          Buscando a temperatura de todo o planeta no servidor do Planetinha. Isso costuma levar apenas alguns
           segundos.
         </p>
       </div>

@@ -37,7 +37,7 @@ export function App({ fetchSnapshotUseCase, selectPointUseCase }: AppProps) {
   return (
     <div className="app">
       <header className="app__header">
-        <h1 className="app__title">Vento — Temperatura Global em Tempo Real</h1>
+        <h1 className="app__title">Planetinha — Temperatura Global em Tempo Real</h1>
       </header>
       <main className="app__globe-area" aria-label="Globo de temperatura global">
         <Globe snapshot={snapshot} onPointSelect={selectPoint} />

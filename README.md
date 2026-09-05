@@ -1,10 +1,10 @@
-# Vento
+# Planetinha
 
 An interactive 3D globe that visualizes worldwide temperature as a color gradient, built with React, TypeScript, Three.js, and Vite, on top
-of a Fastify + Postgres backend that Vento owns.
+of a Fastify + Postgres backend that Planetinha owns.
 
 The browser never contacts a weather provider. A single worker process collects hourly Forecast windows from
-[Open-Meteo](https://open-meteo.com/) on a paced schedule and stores them; the frontend asks Vento's own API for one hour's worth of
+[Open-Meteo](https://open-meteo.com/) on a paced schedule and stores them; the frontend asks Planetinha's own API for one hour's worth of
 temperature across the whole Grid. That is what makes whole-planet coverage fit inside the provider's free daily allowance — see
 [ADR-0002](docs/adr/0002-backend-is-the-sole-open-meteo-client.md).
 
@@ -17,9 +17,9 @@ it, in order. The short version:
 npm install
 cp apps/api/.env.example apps/api/.env
 docker compose up -d
-npm run db:migrate --workspace @vento/api
-npm run db:seed --workspace @vento/api
-npm run dev --workspace @vento/web
+npm run db:migrate --workspace @planetinha/api
+npm run db:seed --workspace @planetinha/api
+npm run dev --workspace @planetinha/web
 ```
 
 The globe starts **empty and fills in over roughly 26 minutes** on a fresh instance, with the Coverage percentage climbing as it goes. That

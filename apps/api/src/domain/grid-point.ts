@@ -1,5 +1,5 @@
 /**
- * One latitude/longitude pair Vento collects temperature for, together with the Resolution it
+ * One latitude/longitude pair Planetinha collects temperature for, together with the Resolution it
  * belongs to. The set of them is enumerated in the database and never derived at runtime; the
  * Resolution travels with each Grid Point so that a reseed at a different Resolution cannot
  * silently produce a Snapshot mixing two lattices.

@@ -1,14 +1,14 @@
-# Vento
+# Planetinha
 
-Vento visualises the temperature of the entire Earth on an interactive globe. Its defining constraint is that the upstream weather API's
-free tier allows far fewer calls per day than a naive whole-planet refresh needs, so the system is organised around spending that allowance
-deliberately rather than around fetching quickly.
+Planetinha visualises the temperature of the entire Earth on an interactive globe. Its defining constraint is that the upstream weather
+API's free tier allows far fewer calls per day than a naive whole-planet refresh needs, so the system is organised around spending that
+allowance deliberately rather than around fetching quickly.
 
 ## Language
 
 ### The lattice
 
-**Grid Point**: One latitude/longitude pair that Vento samples temperature at. The set of them is fixed and enumerated in the database,
+**Grid Point**: One latitude/longitude pair that Planetinha samples temperature at. The set of them is fixed and enumerated in the database,
 never derived at runtime. _Avoid_: location, station, coordinate, site
 
 **Grid**: The complete set of Grid Points — a regular lattice covering the whole Earth, with each pole present exactly once. The Grid is
@@ -17,8 +17,8 @@ positions; a Snapshot is values. _Avoid_: mesh, point set, coverage map, snapsho
 **Resolution**: The spacing in degrees between adjacent Grid Points. Bounded by Budget, not by rendering concerns. _Avoid_: precision,
 granularity, density
 
-**Cell**: The square region of the globe's surface that a single Grid Point's temperature colours. Vento never blends between Cells: a Cell
-shows its own Grid Point's value, or nothing. _Avoid_: tile, patch, pixel
+**Cell**: The square region of the globe's surface that a single Grid Point's temperature colours. Planetinha never blends between Cells: a
+Cell shows its own Grid Point's value, or nothing. _Avoid_: tile, patch, pixel
 
 ### Temperature values
 
@@ -31,7 +31,7 @@ per hour from whatever Forecasts exist, and several different Sweeps may have wr
 
 **Valid At**: The hour a temperature value describes. _Avoid_: observedAt, timestamp, time, when
 
-**Fetched At**: The moment Vento retrieved a value from the upstream API. Independent of Valid At — one Fetched At yields many Valid At
+**Fetched At**: The moment Planetinha retrieved a value from the upstream API. Independent of Valid At — one Fetched At yields many Valid At
 hours. _Avoid_: updatedAt, syncedAt, retrievedAt
 
 **No Data**: The absence of a temperature for a Grid Point, always represented as `null` and never as `0`. A real temperature of zero and an

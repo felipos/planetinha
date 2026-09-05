@@ -32,7 +32,7 @@
   (`data-status-banner/`, not `DataStatusBanner/`).
 - A file that plays a specific architectural role carries a suffix naming that role:
   - Use case → `*.use-case.ts` (e.g. `fetch-snapshot.use-case.ts`)
-  - Data source → `*.data-source.ts` (e.g. `vento-snapshot.data-source.ts`)
+  - Data source → `*.data-source.ts` (e.g. `planetinha-snapshot.data-source.ts`)
   - Port (interface) → `*.port.ts`
   - Service → `*.service.ts` (e.g. `http-client.service.ts`, `env.service.ts`)
   - Validator → `*.validator.ts`
