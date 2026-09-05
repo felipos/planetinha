@@ -1,10 +1,10 @@
 import 'reflect-metadata'
 import { container } from 'tsyringe'
-import { CheckHealthUseCase } from './application/check-health.use-case'
-import { GetSnapshotUseCase } from './application/get-snapshot.use-case'
+import { CheckHealthUseCase } from './domain/usecases/check-health.usecase'
+import { GetSnapshotUseCase } from './domain/usecases/get-snapshot.usecase'
 import { DiContainer } from './di-container'
-import { DatabaseReadiness } from './infrastructure/database/database-readiness.service'
-import { Env } from './infrastructure/env.service'
+import { DatabaseReadiness } from './datasource/db/database-readiness.service'
+import { Env } from './core/env.service'
 import { Server } from './server'
 
 // Composition root: the only file that resolves from the container. Everything else receives

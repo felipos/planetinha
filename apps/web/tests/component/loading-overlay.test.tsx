@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { axe } from 'vitest-axe'
 import { LoadingOverlay } from '../../src/presentation/components/loading-overlay/loading-overlay.component'
-import type { DataFetchStatus } from '../../src/domain/data-fetch-status'
+import type { DataFetchStatus } from '../../src/domain/models/data-fetch-status'
 import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
 
 describe('LoadingOverlay', () => {

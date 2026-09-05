@@ -1,4 +1,4 @@
-import type { Coverage, Snapshot } from '../snapshot'
+import type { Coverage, Snapshot } from '../models/snapshot'
 
 /** Reads a Snapshot's reported Coverage — never counts values to guess at it. */
 export class CoverageCalculator {

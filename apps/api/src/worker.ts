@@ -1,12 +1,16 @@
 import 'reflect-metadata'
 import { container } from 'tsyringe'
-import { AdvanceSweepUseCase } from './application/advance-sweep.use-case'
-import type { LoggerPort } from './application/ports/logger.port'
-import { TOKENS } from './application/tokens'
+import { AdvanceSweepUseCase } from './domain/usecases/advance-sweep.usecase'
 import { DiContainer } from './di-container'
-import { DatabaseReadiness } from './infrastructure/database/database-readiness.service'
-import { Database } from './infrastructure/database/database.service'
-import { Env } from './infrastructure/env.service'
+import { DatabaseReadiness } from './datasource/db/database-readiness.service'
+import { Database } from './datasource/db/database.service'
+import { GridPointsDbDataSource } from './datasource/db/grid-points.db.datasource'
+import { SweepsDbDataSource } from './datasource/db/sweeps.db.datasource'
+import { OpenMeteoHttpDataSource } from './datasource/http/open-meteo.http.datasource'
+import { Clock } from './core/clock.service'
+import { Env } from './core/env.service'
+import { Logger } from './core/logger.service'
+import type { SweepConfig } from './core/sweep-config'
 
 /**
  * The worker: the only process that ever calls the upstream provider.
@@ -22,7 +26,7 @@ import { Env } from './infrastructure/env.service'
  */
 DiContainer.setup()
 
-const logger = container.resolve<LoggerPort>(TOKENS.LoggerPort)
+const logger = container.resolve(Logger)
 const database = container.resolve(Database)
 
 // Fail fast, before the first Tick: a worker against an unmigrated or unseeded database would
@@ -35,7 +39,23 @@ try {
   process.exit(1)
 }
 
-const advanceSweepUseCase = container.resolve(AdvanceSweepUseCase)
+// The pacing knobs are a plain value, not a class, so they are built here from `Env` and passed
+// in directly rather than resolved — the same reasoning `config.ts` constants are imported
+// directly for elsewhere in the package.
+const sweepConfig: SweepConfig = {
+  sliceSize: Env.SLICE_SIZE,
+  sweepIntervalMs: Env.SWEEP_INTERVAL_MS,
+}
+
+const advanceSweepUseCase = new AdvanceSweepUseCase(
+  container.resolve(SweepsDbDataSource),
+  container.resolve(GridPointsDbDataSource),
+  container.resolve(OpenMeteoHttpDataSource),
+  sweepConfig,
+  logger,
+  container.resolve(Clock),
+)
+
 const controller = new AbortController()
 let tickInProgress = false
 

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { TEMPERATURE_REFRESH_INTERVAL_MS } from '../../application/config'
-import type { FetchSnapshotUseCase } from '../../application/fetch-snapshot.use-case'
+import { TEMPERATURE_REFRESH_INTERVAL_MS } from '../../core/config'
+import type { FetchSnapshotUseCase } from '../../domain/usecases/fetch-snapshot.usecase'
 import { AbortErrorDetector } from '../../domain/utils/abort-error'
 import { CoverageCalculator } from '../../domain/utils/coverage'
-import type { DataFetchStatus } from '../../domain/data-fetch-status'
-import type { Snapshot } from '../../domain/snapshot'
+import type { DataFetchStatus } from '../../domain/models/data-fetch-status'
+import type { Snapshot } from '../../domain/models/snapshot'
 
 function describeError(error: unknown): string {
   if (error instanceof Error) {

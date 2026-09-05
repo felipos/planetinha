@@ -1,4 +1,4 @@
-import type { Snapshot } from '../../src/domain/snapshot'
+import type { Snapshot } from '../../src/domain/models/snapshot'
 
 /**
  * A fully covered Snapshot with a single Forecast. Spread it and override the fields a test

@@ -4,6 +4,6 @@ import { defineConfig } from 'drizzle-kit'
 // files is `npm run db:migrate`, which needs the connection string and this config does not.
 export default defineConfig({
   dialect: 'postgresql',
-  schema: './src/infrastructure/database/schema.ts',
+  schema: './src/datasource/db/entities/schema.ts',
   out: './migrations',
 })

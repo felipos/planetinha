@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import type { CheckHealthUseCase } from '../../application/check-health.use-case'
+import type { CheckHealthUseCase } from '../../domain/usecases/check-health.usecase'
 
 /**
  * Routes are the api's presentation layer: they translate an HTTP request into a use-case call

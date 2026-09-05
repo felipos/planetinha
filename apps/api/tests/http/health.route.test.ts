@@ -2,18 +2,23 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { container } from 'tsyringe'
-import { CheckHealthUseCase } from '../../src/application/check-health.use-case'
-import { GetSnapshotUseCase } from '../../src/application/get-snapshot.use-case'
+import { CheckHealthUseCase } from '../../src/domain/usecases/check-health.usecase'
+import { GetSnapshotUseCase } from '../../src/domain/usecases/get-snapshot.usecase'
 import { DiContainer } from '../../src/di-container'
-import { Clock } from '../../src/infrastructure/clock.service'
+import { Clock } from '../../src/core/clock.service'
 import { Server } from '../../src/server'
-import { createFakeSnapshotRepository } from '../fixtures/snapshot-repository.fixture'
+import { createFakeForecastsDataSource } from '../fixtures/forecasts-datasource.fixture'
+import { createFakeSweepsDataSource } from '../fixtures/sweeps-datasource.fixture'
 
 function buildServer(): ReturnType<typeof Server.build> {
   const clock = new Clock()
   return Server.build({
     checkHealthUseCase: new CheckHealthUseCase(clock),
-    getSnapshotUseCase: new GetSnapshotUseCase(createFakeSnapshotRepository(), clock),
+    getSnapshotUseCase: new GetSnapshotUseCase(
+      createFakeForecastsDataSource(),
+      createFakeSweepsDataSource(),
+      clock,
+    ),
   })
 }
 

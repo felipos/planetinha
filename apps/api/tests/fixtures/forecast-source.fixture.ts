@@ -2,10 +2,10 @@ import type {
   FetchForecastsOptions,
   FetchedForecast,
   FetchedForecastWindow,
-  ForecastSourcePort,
-} from '../../src/application/ports/forecast-source.port'
-import type { StoredGridPoint } from '../../src/domain/grid-point'
-import type { LogFields, LoggerPort } from '../../src/application/ports/logger.port'
+  OpenMeteoHttpDataSource,
+} from '../../src/datasource/http/open-meteo.http.datasource'
+import type { StoredGridPoint } from '../../src/domain/models/grid-point'
+import type { LogFields, Logger } from '../../src/core/logger.service'
 
 export interface FakeForecastSourceOptions {
   /** Hours per Grid Point in the window the fake returns. Two forecast days is 48. */
@@ -20,8 +20,8 @@ export interface FakeForecastSourceOptions {
 
 export const WINDOW_START = new Date('2026-08-31T00:00:00.000Z')
 
-/** A `ForecastSourcePort` that answers from arithmetic instead of from the network. */
-export function createFakeForecastSource(options: FakeForecastSourceOptions = {}): ForecastSourcePort {
+/** An `OpenMeteoHttpDataSource` that answers from arithmetic instead of from the network. */
+export function createFakeForecastSource(options: FakeForecastSourceOptions = {}): OpenMeteoHttpDataSource {
   const hoursInWindow = options.hoursInWindow ?? 48
   const fetchedAt = options.fetchedAt ?? new Date('2026-08-31T09:15:00.000Z')
   const temperature = options.temperature ?? (() => 10)
@@ -55,7 +55,7 @@ export function createFakeForecastSource(options: FakeForecastSourceOptions = {}
 
       return { forecasts, fetchedAt }
     },
-  }
+  } as unknown as OpenMeteoHttpDataSource
 }
 
 export interface RecordedLog {
@@ -64,13 +64,16 @@ export interface RecordedLog {
   readonly fields: LogFields
 }
 
-/** A `LoggerPort` that keeps its lines so a test can assert one was written. */
-export function createRecordingLogger(): LoggerPort & { readonly lines: RecordedLog[] } {
+/** A `Logger` that keeps its lines so a test can assert one was written. */
+export function createRecordingLogger(): Logger & { readonly lines: RecordedLog[] } {
   const lines: RecordedLog[] = []
   return {
     lines,
-    info: (message, fields) => lines.push({ level: 'info', message, fields: fields ?? {} }),
-    warn: (message, fields) => lines.push({ level: 'warn', message, fields: fields ?? {} }),
-    error: (message, fields) => lines.push({ level: 'error', message, fields: fields ?? {} }),
-  }
+    info: (message: string, fields?: LogFields) =>
+      lines.push({ level: 'info', message, fields: fields ?? {} }),
+    warn: (message: string, fields?: LogFields) =>
+      lines.push({ level: 'warn', message, fields: fields ?? {} }),
+    error: (message: string, fields?: LogFields) =>
+      lines.push({ level: 'error', message, fields: fields ?? {} }),
+  } as unknown as Logger & { readonly lines: RecordedLog[] }
 }

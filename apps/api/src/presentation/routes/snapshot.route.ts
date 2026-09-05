@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
-import type { GetSnapshotUseCase } from '../../application/get-snapshot.use-case'
-import type { Snapshot } from '../../domain/snapshot'
-import type { SweepStatus } from '../../domain/sweep'
+import type { GetSnapshotUseCase } from '../../domain/usecases/get-snapshot.usecase'
+import type { Snapshot } from '../../domain/models/snapshot'
+import type { SweepStatus } from '../../domain/models/sweep'
 
 /**
  * The wire contract with the frontend, stated in the domain's vocabulary so that reading a

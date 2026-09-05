@@ -19,24 +19,29 @@
 ## Dependency injection (tsyringe)
 
 - Use [tsyringe](https://github.com/microsoft/tsyringe) for dependency injection. Decorate injectable classes with `@injectable()`.
-- A dependency typed as an interface (a port) needs an injection token, since interfaces have no runtime representation — see
-  `src/application/tokens.ts`. A dependency typed as a concrete class needs no token; tsyringe can resolve it directly.
-- All container registration happens in one place: `src/di-container.ts`. No other file should call `container.register*`.
+- There are no interfaces between layers — a use case constructor-injects the concrete datasource (or other) class it needs and calls it
+  directly. A concrete class needs no token or registration; tsyringe resolves it directly from the decorator metadata emitted for its
+  constructor. See `docs/adr/0005-drop-ports-for-direct-references.md` for why this project doesn't use ports/adapters.
+- All container registration happens in one place: `src/di-container.ts`. No other file should call `container.register*`. Most classes
+  never need an entry there at all — it exists only to register a class as a **shared singleton** (e.g. the api's `Database` connection and
+  `Logger`) rather than a fresh instance per resolve. A package with nothing that needs to be a singleton has no `di-container.ts` at all
+  (see `apps/web`).
 - The composition root (`src/main.tsx`) is the only file that calls `container.resolve()`. It resolves the use cases the app needs and
   passes them down as props — components and hooks receive their use case as a parameter, they never resolve one themselves. This keeps
-  components/hooks trivially testable with a fake use case, with no container involved in tests.
+  components/hooks trivially testable with a fake use case, with no container involved in tests. A fake in a test is a plain object literal
+  satisfying the concrete class's public shape, cast with `as unknown as <ClassName>` since there's no interface to implement.
 
 ## Naming conventions
 
 - Directories and files are `kebab-case`. No `PascalCase` or `camelCase` filenames or directory names anywhere in the project
   (`data-status-banner/`, not `DataStatusBanner/`).
 - A file that plays a specific architectural role carries a suffix naming that role:
-  - Use case → `*.use-case.ts` (e.g. `fetch-snapshot.use-case.ts`)
-  - Data source → `*.data-source.ts` (e.g. `planetinha-snapshot.data-source.ts`)
-  - Port (interface) → `*.port.ts`
+  - Use case → `*.usecase.ts` (e.g. `fetch-snapshot.usecase.ts`)
+  - Data source → `*.datasource.ts`, named after what it talks to — `<provider>.http.datasource.ts` for an HTTP call (e.g.
+    `open-meteo.http.datasource.ts`), `<table>.db.datasource.ts` for a database table (api only, e.g. `sweeps.db.datasource.ts`)
   - Service → `*.service.ts` (e.g. `http-client.service.ts`, `env.service.ts`)
   - Validator → `*.validator.ts`
-  - Repository (api only) → `*.repository.ts` (e.g. `snapshot.repository.ts`)
+  - Database table definition (api only) → `*.entity.ts` (e.g. `sweeps.entity.ts`), living under `datasource/db/entities/`
   - HTTP route (api only) → `*.route.ts` (e.g. `snapshot.route.ts`)
   - React hook → `*.hook.ts`
   - React component → `*.component.tsx`
@@ -57,7 +62,8 @@ is one architecture to learn. `apps/api` differs from `apps/web` in exactly four
   modernisations fail — one at parse time, one silently at runtime. See `docs/adr/0004-swc-register-required-by-tsyringe.md` before changing
   the loader, the test command, or the Dockerfile.
 - Its test runner is Node's built-in one (`node:test`), not Vitest.
-- Its presentation layer is HTTP routes rather than React, and it adds the `*.repository.ts` and `*.route.ts` role suffixes.
+- Its presentation layer is HTTP routes rather than React, and it adds the `*.entity.ts` and `*.route.ts` role suffixes, plus the
+  `datasource/db/` layer (`apps/web` only ever has `datasource/http/`).
 - **Every dependency it adds is pinned to an exact version.** `apps/web`'s existing ranges are deliberately left alone; the pinning rule
   applies going forward.
 
@@ -66,7 +72,7 @@ upstream calls, so nothing that calls the weather provider may be moved into the
 
 ## HTTP calls
 
-- Every data source that needs to make an HTTP call goes through `HttpClient` (`src/infrastructure/http-client.service.ts` in either
+- Every data source that needs to make an HTTP call goes through `HttpClient` (`src/datasource/http/http-client.service.ts` in either
   package) instead of calling `fetch` directly. `HttpClient` is a thin wrapper around `fetch` that also handles retry-with-backoff on HTTP
   429 and abort propagation, so every data source gets that behavior for free instead of reimplementing it.
 - Data-source-specific concerns (batching, response shape, mapping to domain models) stay in the data source itself — `HttpClient` only
@@ -76,13 +82,14 @@ upstream calls, so nothing that calls the weather provider may be moved into the
 
 - `apps/web` has **no** environment variables at all, and should not gain any. It calls a relative API path in every environment, so there
   is no base URL to configure and no CORS to set up.
-- `apps/api` reads its variables through one typed accessor: never read `process.env` outside `src/infrastructure/env.service.ts`. Add a
-  static getter to the `Env` class instead, so the rest of the package gets it with autocomplete: `Env.DATABASE_URL`. A new variable also
-  needs an entry in `apps/api/.env.example`.
+- `apps/api` reads its variables through one typed accessor: never read `process.env` outside `src/core/env.service.ts`. Add a static getter
+  to the `Env` class instead, so the rest of the package gets it with autocomplete: `Env.DATABASE_URL`. A new variable also needs an entry
+  in `apps/api/.env.example`.
 - `apps/api/.env` is read only on the host. Containers get their values from `compose.yaml`. The database connection string necessarily has
   two different values, and the two live in those two separate places on purpose — see `docs/running.md`.
-- Values that a use case depends on (Slice size, the Sweep interval) are read from `Env` in `di-container.ts` and injected, so a use case
-  depends on the value rather than on where it came from.
+- Values that a use case depends on (Slice size, the Sweep interval) are read from `Env` and built into a plain config value at the
+  composition root (`worker.ts`, for `SweepConfig`), then passed straight into the use case's constructor — so a use case depends on the
+  value rather than on where it came from, with no DI token needed for a plain (non-class) value.
 
 ## Comments
 

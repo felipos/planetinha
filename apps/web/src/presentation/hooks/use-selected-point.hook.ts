@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
-import type { SelectPointUseCase } from '../../application/select-point.use-case'
-import type { SelectedPoint } from '../../domain/selected-point'
-import type { Snapshot } from '../../domain/snapshot'
+import type { SelectPointUseCase } from '../../domain/usecases/select-point.usecase'
+import type { SelectedPoint } from '../../domain/models/selected-point'
+import type { Snapshot } from '../../domain/models/snapshot'
 
 export interface UseSelectedPointResult {
   readonly selectedPoint: SelectedPoint | null

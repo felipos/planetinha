@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SnapshotResponseValidator } from '../../src/infrastructure/planetinha/snapshot-response.validator'
+import { SnapshotResponseValidator } from '../../src/datasource/http/snapshot-response.validator'
 
 const validBody = {
   validAt: '2026-08-31T09:00:00.000Z',

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { ColorScale } from '../../../domain/utils/color-scale'
 import { CellLocator } from '../../../domain/utils/cell-locator'
-import type { Snapshot } from '../../../domain/snapshot'
+import type { Snapshot } from '../../../domain/models/snapshot'
 import earthBasemapUrl from './earth-basemap.png'
 import { SphereProjection } from './sphere-projection'
 

@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify'
-import type { CheckHealthUseCase } from './application/check-health.use-case'
-import type { GetSnapshotUseCase } from './application/get-snapshot.use-case'
+import type { CheckHealthUseCase } from './domain/usecases/check-health.usecase'
+import type { GetSnapshotUseCase } from './domain/usecases/get-snapshot.usecase'
 import { HealthRoute } from './presentation/routes/health.route'
 import { SnapshotRoute } from './presentation/routes/snapshot.route'
 

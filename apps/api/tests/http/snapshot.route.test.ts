@@ -1,27 +1,36 @@
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { GRID_RESOLUTION_DEGREES } from '../../src/application/config'
-import { CheckHealthUseCase } from '../../src/application/check-health.use-case'
-import { GetSnapshotUseCase } from '../../src/application/get-snapshot.use-case'
-import type { SnapshotRepositoryPort } from '../../src/application/ports/snapshot-repository.port'
+import { GRID_RESOLUTION_DEGREES } from '../../src/core/config'
+import { CheckHealthUseCase } from '../../src/domain/usecases/check-health.usecase'
+import { GetSnapshotUseCase } from '../../src/domain/usecases/get-snapshot.usecase'
+import type { ForecastsDbDataSource } from '../../src/datasource/db/forecasts.db.datasource'
 import type { SnapshotBody } from '../../src/presentation/routes/snapshot.route'
-import { Clock } from '../../src/infrastructure/clock.service'
+import { Clock } from '../../src/core/clock.service'
 import { Server } from '../../src/server'
 import { FixedClock } from '../fixtures/clock.fixture'
-import { createFakeSnapshotRepository, storedGrid } from '../fixtures/snapshot-repository.fixture'
+import { createFakeForecastsDataSource, storedGrid } from '../fixtures/forecasts-datasource.fixture'
+import {
+  createFakeSweepsDataSource,
+  type FakeSweepsDataSourceOptions,
+} from '../fixtures/sweeps-datasource.fixture'
 
 const NOW = new Date('2026-08-31T09:41:23.000Z')
 const CURRENT_HOUR = '2026-08-31T09:00:00.000Z'
 const LONGITUDE_COLUMNS = 360 / GRID_RESOLUTION_DEGREES
 
 async function getSnapshot(
-  repository: SnapshotRepositoryPort,
+  forecastsDataSource: ForecastsDbDataSource,
+  sweepOptions: FakeSweepsDataSourceOptions = {},
   clock: Clock = new FixedClock(NOW),
 ): Promise<{ statusCode: number; body: SnapshotBody }> {
   const app = Server.build({
     checkHealthUseCase: new CheckHealthUseCase(clock),
-    getSnapshotUseCase: new GetSnapshotUseCase(repository, clock),
+    getSnapshotUseCase: new GetSnapshotUseCase(
+      forecastsDataSource,
+      createFakeSweepsDataSource(sweepOptions),
+      clock,
+    ),
   })
   const response = await app.inject({ method: 'GET', url: '/api/snapshot' })
   await app.close()
@@ -31,13 +40,14 @@ async function getSnapshot(
 describe('GET /api/snapshot', () => {
   it('returns a fully covered Snapshot with its Valid At, Resolution, Coverage, and sweep block', async () => {
     // Arrange
-    const repository = createFakeSnapshotRepository({
+    const forecastsDataSource = createFakeForecastsDataSource({
       forecastsByValidAt: new Map([[CURRENT_HOUR, storedGrid(() => 12.5)]]),
-      sweep: { status: 'completed', completedAt: new Date('2026-08-31T09:26:00.000Z') },
     })
 
     // Act
-    const { statusCode, body } = await getSnapshot(repository)
+    const { statusCode, body } = await getSnapshot(forecastsDataSource, {
+      sweep: { status: 'completed', completedAt: new Date('2026-08-31T09:26:00.000Z') },
+    })
 
     // Assert
     assert.equal(statusCode, 200)
@@ -50,12 +60,12 @@ describe('GET /api/snapshot', () => {
 
   it('expands each stored pole Grid Point across all 72 longitudes', async () => {
     // Arrange
-    const repository = createFakeSnapshotRepository({
+    const forecastsDataSource = createFakeForecastsDataSource({
       forecastsByValidAt: new Map([[CURRENT_HOUR, storedGrid((point) => point.latitude)]]),
     })
 
     // Act
-    const { body } = await getSnapshot(repository)
+    const { body } = await getSnapshot(forecastsDataSource)
 
     // Assert
     const northPole = body.forecasts.filter((forecast) => forecast.latitude === 90)
@@ -71,12 +81,12 @@ describe('GET /api/snapshot', () => {
   it('returns null for the Grid Points with No Data and counts only the ones with a temperature', async () => {
     // Arrange
     // The northern hemisphere has data; everything below the equator does not.
-    const repository = createFakeSnapshotRepository({
+    const forecastsDataSource = createFakeForecastsDataSource({
       forecastsByValidAt: new Map([[CURRENT_HOUR, storedGrid((point) => (point.latitude > 0 ? 3 : null))]]),
     })
 
     // Act
-    const { body } = await getSnapshot(repository)
+    const { body } = await getSnapshot(forecastsDataSource)
 
     // Assert
     const withData = body.forecasts.filter((forecast) => forecast.temperatureCelsius !== null)
@@ -91,10 +101,10 @@ describe('GET /api/snapshot', () => {
 
   it('succeeds with every temperature null and Coverage zero before the first Sweep completes', async () => {
     // Arrange
-    const repository = createFakeSnapshotRepository()
+    const forecastsDataSource = createFakeForecastsDataSource()
 
     // Act
-    const { statusCode, body } = await getSnapshot(repository)
+    const { statusCode, body } = await getSnapshot(forecastsDataSource)
 
     // Assert
     assert.equal(statusCode, 200)
@@ -108,7 +118,7 @@ describe('GET /api/snapshot', () => {
   it('falls back to the most recent hour that has data and reports that hour as its Valid At', async () => {
     // Arrange
     const earlierHour = '2026-08-31T07:00:00.000Z'
-    const repository = createFakeSnapshotRepository({
+    const forecastsDataSource = createFakeForecastsDataSource({
       forecastsByValidAt: new Map([
         ['2026-08-31T05:00:00.000Z', storedGrid(() => 1)],
         [earlierHour, storedGrid(() => 2)],
@@ -118,7 +128,7 @@ describe('GET /api/snapshot', () => {
     })
 
     // Act
-    const { body } = await getSnapshot(repository)
+    const { body } = await getSnapshot(forecastsDataSource)
 
     // Assert
     assert.equal(body.validAt, earlierHour)
@@ -128,14 +138,14 @@ describe('GET /api/snapshot', () => {
   it('carries a Fetched At on every Forecast and none at the top level', async () => {
     // Arrange
     const fetchedAt = new Date('2026-08-31T08:03:00.000Z')
-    const repository = createFakeSnapshotRepository({
+    const forecastsDataSource = createFakeForecastsDataSource({
       forecastsByValidAt: new Map([
         [CURRENT_HOUR, storedGrid((point) => (point.latitude > 0 ? 3 : null), fetchedAt)],
       ]),
     })
 
     // Act
-    const { body } = await getSnapshot(repository)
+    const { body } = await getSnapshot(forecastsDataSource)
 
     // Assert
     assert.ok(!Object.keys(body).includes('fetchedAt'))
@@ -148,13 +158,14 @@ describe('GET /api/snapshot', () => {
 
   it('reports a Sweep in progress alongside the hour it is filling in', async () => {
     // Arrange
-    const repository = createFakeSnapshotRepository({
+    const forecastsDataSource = createFakeForecastsDataSource({
       forecastsByValidAt: new Map([[CURRENT_HOUR, storedGrid((point) => (point.longitude < 0 ? 8 : null))]]),
-      sweep: { status: 'in_progress', completedAt: null },
     })
 
     // Act
-    const { body } = await getSnapshot(repository)
+    const { body } = await getSnapshot(forecastsDataSource, {
+      sweep: { status: 'in_progress', completedAt: null },
+    })
 
     // Assert
     assert.deepEqual(body.sweep, { status: 'in_progress', completedAt: null })

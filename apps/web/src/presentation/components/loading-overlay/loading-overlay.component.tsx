@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react'
-import type { DataFetchStatus } from '../../../domain/data-fetch-status'
+import type { DataFetchStatus } from '../../../domain/models/data-fetch-status'
 import './loading-overlay.css'
 
 export interface LoadingOverlayProps {

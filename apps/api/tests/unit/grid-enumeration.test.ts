@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { GRID_RESOLUTION_DEGREES } from '../../src/application/config'
+import { GRID_RESOLUTION_DEGREES } from '../../src/core/config'
 import { GridEnumerator } from '../../src/domain/utils/grid-enumeration'
 
 describe('GridEnumerator', () => {

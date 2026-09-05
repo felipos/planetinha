@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import type { GlobeViewState } from '../../../domain/globe-view-state'
+import type { GlobeViewState } from '../../../domain/models/globe-view-state'
 import { SphereProjection } from './sphere-projection'
 
 export interface GlobeRendererHandle {

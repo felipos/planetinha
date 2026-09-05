@@ -1,4 +1,4 @@
-import type { Coverage, SnapshotForecast } from '../snapshot'
+import type { Coverage, SnapshotForecast } from '../models/snapshot'
 import { GridEnumerator } from './grid-enumeration'
 
 /** One Grid Point's stored state for an hour: the position, and its Forecast if it has one. */

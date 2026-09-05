@@ -2,7 +2,7 @@ import 'reflect-metadata'
 import { fileURLToPath } from 'node:url'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import { container } from 'tsyringe'
-import { Database } from '../infrastructure/database/database.service'
+import { Database } from '../datasource/db/database.service'
 
 // Migrations are run explicitly by a human or an agent, never as a side effect of a process
 // starting. This script is that explicit step.

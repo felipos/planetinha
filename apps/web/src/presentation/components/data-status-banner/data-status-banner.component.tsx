@@ -1,4 +1,4 @@
-import type { DataFetchStatus } from '../../../domain/data-fetch-status'
+import type { DataFetchStatus } from '../../../domain/models/data-fetch-status'
 import './data-status-banner.css'
 
 export interface DataStatusBannerProps {

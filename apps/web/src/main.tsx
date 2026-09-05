@@ -3,14 +3,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { container } from 'tsyringe'
 import './index.css'
-import { DiContainer } from './di-container'
-import { FetchSnapshotUseCase } from './application/fetch-snapshot.use-case'
-import { SelectPointUseCase } from './application/select-point.use-case'
+import { FetchSnapshotUseCase } from './domain/usecases/fetch-snapshot.usecase'
+import { SelectPointUseCase } from './domain/usecases/select-point.usecase'
 import { App } from './presentation/app.component'
 
-// Composition root: the only layer that knows a DI container exists at all. Everything else
-// (use cases, presentation) only ever depends on interfaces/classes injected into it.
-DiContainer.setup()
+// Composition root: the only layer that knows a DI container exists at all. Every dependency
+// here is a concrete class, so tsyringe resolves the whole graph with no registration needed.
 const fetchSnapshotUseCase = container.resolve(FetchSnapshotUseCase)
 const selectPointUseCase = container.resolve(SelectPointUseCase)
 

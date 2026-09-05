@@ -1,4 +1,4 @@
-import type { GridPoint } from '../grid-point'
+import type { GridPoint } from '../models/grid-point'
 
 /**
  * Enumerates the Grid: the regular lattice of Grid Points covering the whole Earth at a given

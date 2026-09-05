@@ -1,5 +1,5 @@
-import type { Forecast } from '../forecast'
-import type { Snapshot } from '../snapshot'
+import type { Forecast } from '../models/forecast'
+import type { Snapshot } from '../models/snapshot'
 
 export interface CellLookup {
   readonly forecastsByCell: ReadonlyMap<string, Forecast>

@@ -1,8 +1,8 @@
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FetchSnapshotUseCase } from '../../src/application/fetch-snapshot.use-case'
-import { SelectPointUseCase } from '../../src/application/select-point.use-case'
-import type { Snapshot } from '../../src/domain/snapshot'
+import type { FetchSnapshotUseCase } from '../../src/domain/usecases/fetch-snapshot.usecase'
+import { SelectPointUseCase } from '../../src/domain/usecases/select-point.usecase'
+import type { Snapshot } from '../../src/domain/models/snapshot'
 import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
 
 // jsdom implements neither WebGL nor canvas, and the globe's rendering is validated by running

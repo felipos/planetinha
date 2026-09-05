@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { axe } from 'vitest-axe'
 import { DataStatusBanner } from '../../src/presentation/components/data-status-banner/data-status-banner.component'
-import type { DataFetchStatus } from '../../src/domain/data-fetch-status'
+import type { DataFetchStatus } from '../../src/domain/models/data-fetch-status'
 import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
 
 describe('DataStatusBanner', () => {

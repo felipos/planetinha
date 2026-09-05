@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect } from 'react'
-import type { SelectedPoint } from '../../../domain/selected-point'
+import type { SelectedPoint } from '../../../domain/models/selected-point'
 import './point-inspector.css'
 
 export interface PointInspectorProps {

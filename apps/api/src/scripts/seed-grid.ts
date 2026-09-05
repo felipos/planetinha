@@ -1,10 +1,10 @@
 import 'reflect-metadata'
 import { count } from 'drizzle-orm'
 import { container } from 'tsyringe'
-import { GRID_RESOLUTION_DEGREES } from '../application/config'
+import { GRID_RESOLUTION_DEGREES } from '../core/config'
 import { GridEnumerator } from '../domain/utils/grid-enumeration'
-import { Database } from '../infrastructure/database/database.service'
-import { gridPoints } from '../infrastructure/database/schema'
+import { Database } from '../datasource/db/database.service'
+import { gridPoints } from '../datasource/db/entities/schema'
 
 // Seeding is run explicitly, like migrating. Re-running it is safe: the insert conflicts on the
 // (latitude, longitude, Resolution) uniqueness of a Grid Point and does nothing, so the Grid is

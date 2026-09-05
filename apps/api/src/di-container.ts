@@ -1,32 +1,17 @@
 import { container } from 'tsyringe'
-import type { SweepConfig } from './application/sweep-config'
-import { TOKENS } from './application/tokens'
-import { SnapshotRepository } from './infrastructure/database/snapshot.repository'
-import { SweepRepository } from './infrastructure/database/sweep.repository'
-import { Env } from './infrastructure/env.service'
-import { OpenMeteoForecastDataSource } from './infrastructure/open-meteo/open-meteo-forecast.data-source'
-import { PinoLogger } from './infrastructure/pino-logger.service'
+import { Database } from './datasource/db/database.service'
+import { Logger } from './core/logger.service'
 
 /**
- * Composition root's DI wiring: the only place allowed to call `container.register*`. Concrete
- * classes (`Clock`, `Database`, use cases) need no registration at all — tsyringe resolves them
- * directly from the decorator metadata emitted for their constructor. Only a port, whose
- * interface has no runtime representation, needs a token registered against an implementation.
- *
- * This is also the only place that reads the environment into the pacing configuration, so a
- * use case depends on the values rather than on where they came from.
+ * Composition root's DI wiring: the only place allowed to call `container.register*`. Every
+ * class-typed dependency resolves on its own from the decorator metadata emitted for its
+ * constructor — this file exists only for the two things that must stay a single shared
+ * instance rather than a fresh one per resolve: the one Postgres connection the process uses,
+ * and the one Pino instance every log line goes through.
  */
 export class DiContainer {
   static setup(): void {
-    container.registerSingleton(TOKENS.SnapshotRepositoryPort, SnapshotRepository)
-    container.registerSingleton(TOKENS.SweepRepositoryPort, SweepRepository)
-    container.registerSingleton(TOKENS.ForecastSourcePort, OpenMeteoForecastDataSource)
-    container.registerSingleton(TOKENS.LoggerPort, PinoLogger)
-
-    const sweepConfig: SweepConfig = {
-      sliceSize: Env.SLICE_SIZE,
-      sweepIntervalMs: Env.SWEEP_INTERVAL_MS,
-    }
-    container.register(TOKENS.SweepConfig, { useValue: sweepConfig })
+    container.registerSingleton(Database)
+    container.registerSingleton(Logger)
   }
 }

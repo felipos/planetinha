@@ -2,7 +2,7 @@ import { fireEvent, render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { PointInspector } from '../../src/presentation/components/point-inspector/point-inspector.component'
-import type { SelectedPoint } from '../../src/domain/selected-point'
+import type { SelectedPoint } from '../../src/domain/models/selected-point'
 
 const samplePoint: SelectedPoint = {
   latitude: 10,

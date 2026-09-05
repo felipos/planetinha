@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { Snapshot } from '../../../domain/snapshot'
+import type { Snapshot } from '../../../domain/models/snapshot'
 import { HeatmapTexture } from './heatmap-texture'
 import { useGlobeRenderer } from './use-globe-renderer.hook'
 import './globe.css'
