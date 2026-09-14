@@ -20,6 +20,10 @@ granularity, density
 **Cell**: The square region of the globe's surface that a single Grid Point's temperature colours. Planetinha never blends between Cells: a
 Cell shows its own Grid Point's value, or nothing. _Avoid_: tile, patch, pixel
 
+**Pole Expansion**: Restoring a pole — stored once, since every longitude at a pole names the same physical location — to all of its
+longitudes before a Snapshot reaches the wire, so that single-row storage saving is invisible to any caller. The write side never needed a
+name of its own: enumerating a pole once is simply not looping. _Avoid_: pole dedup, unpacking, denormalizing
+
 ### Temperature values
 
 **Forecast**: A temperature value for one Grid Point at one Valid At hour, produced by the upstream weather model. Not a measurement — no
@@ -48,8 +52,11 @@ end, and survives a process restart. _Avoid_: run, sync, cycle, job, refresh, up
 **Slice**: The contiguous run of Grid Points a Sweep advances through on a single Tick. A Slice is identified by its position in the Sweep's
 ordering, and that ordering is what makes a Sweep resumable. _Avoid_: batch, chunk, page, window
 
-**Tick**: The worker's fixed heartbeat. On each Tick the worker either advances the open Sweep or does nothing. Ticks are what convert the
+**Tick**: The Sweep Worker's fixed heartbeat. On each Tick it either advances the open Sweep or does nothing. Ticks are what convert the
 Budget into a safe pace. _Avoid_: interval, poll, beat, schedule
+
+**Sweep Worker**: The standalone process whose only job is to Tick, advancing whatever Sweep is open. It runs in its own container, separate
+from the api process that serves Snapshots (see `0002-backend-is-the-sole-open-meteo-client.md`). _Avoid_: worker, poller, cron, scheduler
 
 **Budget**: The upstream API's _daily_ call allowance. The binding constraint on Resolution and on how often a Sweep may start. _Avoid_:
 quota, limit

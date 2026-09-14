@@ -9,7 +9,7 @@ describe('GridEnumerator', () => {
     const longitudeColumns = 360 / GRID_RESOLUTION_DEGREES
 
     // Act
-    const points = GridEnumerator.enumerate(GRID_RESOLUTION_DEGREES)
+    const points = GridEnumerator.enumerate()
 
     // Assert
     // 37 latitude rows × 72 longitude columns is 2,664; storing each pole once instead of 72
@@ -20,48 +20,27 @@ describe('GridEnumerator', () => {
 
   it('holds each pole exactly once', () => {
     // Arrange & Act
-    const points = GridEnumerator.enumerate(GRID_RESOLUTION_DEGREES)
+    const points = GridEnumerator.enumerate()
 
     // Assert
     assert.deepEqual(
       points.filter((point) => point.latitude === 90),
-      [{ latitude: 90, longitude: 0, resolutionDegrees: GRID_RESOLUTION_DEGREES }],
+      [{ latitude: 90, longitude: 0 }],
     )
     assert.deepEqual(
       points.filter((point) => point.latitude === -90),
-      [{ latitude: -90, longitude: 0, resolutionDegrees: GRID_RESOLUTION_DEGREES }],
+      [{ latitude: -90, longitude: 0 }],
     )
-  })
-
-  it('records the Resolution it belongs to on every Grid Point', () => {
-    // Arrange & Act
-    const points = GridEnumerator.enumerate(GRID_RESOLUTION_DEGREES)
-
-    // Assert
-    assert.ok(points.every((point) => point.resolutionDegrees === GRID_RESOLUTION_DEGREES))
   })
 
   it('covers the whole Earth with no duplicated position', () => {
     // Arrange & Act
-    const points = GridEnumerator.enumerate(GRID_RESOLUTION_DEGREES)
+    const points = GridEnumerator.enumerate()
 
     // Assert
     const positions = new Set(points.map((point) => `${point.latitude}|${point.longitude}`))
     assert.equal(positions.size, points.length)
     assert.ok(points.every((point) => point.latitude >= -90 && point.latitude <= 90))
     assert.ok(points.every((point) => point.longitude >= -180 && point.longitude < 180))
-  })
-
-  it('reports the expanded point count the wire format describes, poles included at every longitude', () => {
-    // Arrange & Act
-    const expanded = GridEnumerator.expandedPointCount(GRID_RESOLUTION_DEGREES)
-
-    // Assert
-    assert.equal(expanded, 2_664)
-  })
-
-  it('rejects a Resolution that is not a positive number of degrees', () => {
-    // Arrange & Act & Assert
-    assert.throws(() => GridEnumerator.enumerate(0), /positive number of degrees/)
   })
 })

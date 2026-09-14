@@ -12,7 +12,7 @@ import { gridPoints } from '../datasource/db/entities/schema'
 const database = container.resolve(Database)
 
 try {
-  const points = GridEnumerator.enumerate(GRID_RESOLUTION_DEGREES)
+  const points = GridEnumerator.enumerate()
   await database.drizzle
     .insert(gridPoints)
     .values([...points])

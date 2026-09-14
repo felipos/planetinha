@@ -5,15 +5,15 @@ import { GRID_RESOLUTION_DEGREES } from '../../src/core/config'
 import { CheckHealthUseCase } from '../../src/domain/usecases/check-health.usecase'
 import { GetSnapshotUseCase } from '../../src/domain/usecases/get-snapshot.usecase'
 import type { ForecastsDbDataSource } from '../../src/datasource/db/forecasts.db.datasource'
-import type { SnapshotBody } from '../../src/presentation/routes/snapshot.route'
+import type { SnapshotResponse } from '../../src/presentation/routes/snapshot.route'
 import { Clock } from '../../src/core/clock.service'
 import { Server } from '../../src/server'
-import { FixedClock } from '../fixtures/clock.fixture'
-import { createFakeForecastsDataSource, storedGrid } from '../fixtures/forecasts-datasource.fixture'
+import { FixedClock } from '../fixtures/clock.mock'
+import { createFakeForecastsDataSource, storedGrid } from '../fixtures/forecasts-datasource.mock'
 import {
   createFakeSweepsDataSource,
   type FakeSweepsDataSourceOptions,
-} from '../fixtures/sweeps-datasource.fixture'
+} from '../fixtures/sweeps-datasource.mock'
 
 const NOW = new Date('2026-08-31T09:41:23.000Z')
 const CURRENT_HOUR = '2026-08-31T09:00:00.000Z'
@@ -23,7 +23,7 @@ async function getSnapshot(
   forecastsDataSource: ForecastsDbDataSource,
   sweepOptions: FakeSweepsDataSourceOptions = {},
   clock: Clock = new FixedClock(NOW),
-): Promise<{ statusCode: number; body: SnapshotBody }> {
+): Promise<{ statusCode: number; body: SnapshotResponse }> {
   const app = Server.build({
     checkHealthUseCase: new CheckHealthUseCase(clock),
     getSnapshotUseCase: new GetSnapshotUseCase(
@@ -34,7 +34,7 @@ async function getSnapshot(
   })
   const response = await app.inject({ method: 'GET', url: '/api/snapshot' })
   await app.close()
-  return { statusCode: response.statusCode, body: response.json<SnapshotBody>() }
+  return { statusCode: response.statusCode, body: response.json<SnapshotResponse>() }
 }
 
 describe('GET /api/snapshot', () => {

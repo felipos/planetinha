@@ -6,17 +6,15 @@ export function createFakeGridPointsDataSource(
   gridPoints: readonly StoredGridPoint[],
 ): GridPointsDbDataSource {
   return {
-    async countGridPoints(resolutionDegrees: number): Promise<number> {
-      return gridPoints.filter((point) => point.resolutionDegrees === resolutionDegrees).length
+    async countGridPoints(): Promise<number> {
+      return gridPoints.length
     },
 
     async findSliceAfter(
       cursorGridPointId: number | null,
       sliceSize: number,
-      resolutionDegrees: number,
     ): Promise<readonly StoredGridPoint[]> {
       return gridPoints
-        .filter((point) => point.resolutionDegrees === resolutionDegrees)
         .filter((point) => cursorGridPointId === null || point.id > cursorGridPointId)
         .sort((a, b) => a.id - b.id)
         .slice(0, sliceSize)
@@ -25,11 +23,10 @@ export function createFakeGridPointsDataSource(
 }
 
 /** `count` Grid Points with consecutive ids, standing in for a seeded Grid. */
-export function storedGridPoints(count: number, resolutionDegrees = 5): StoredGridPoint[] {
+export function storedGridPoints(count: number): StoredGridPoint[] {
   return Array.from({ length: count }, (_unused, index) => ({
     id: index + 1,
     latitude: -90 + index,
     longitude: -180 + index,
-    resolutionDegrees,
   }))
 }

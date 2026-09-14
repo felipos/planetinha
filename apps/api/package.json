@@ -8,9 +8,9 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env --import @swc-node/register/esm-register src/main.ts",
-    "start:worker": "node --env-file-if-exists=.env --import @swc-node/register/esm-register src/worker.ts",
+    "worker:sweep": "node --env-file-if-exists=.env --import @swc-node/register/esm-register src/sweep-worker.ts",
     "dev": "node --watch --env-file-if-exists=.env --import @swc-node/register/esm-register src/main.ts",
-    "dev:worker": "node --watch --env-file-if-exists=.env --import @swc-node/register/esm-register src/worker.ts",
+    "worker:sweep:dev": "node --watch --env-file-if-exists=.env --import @swc-node/register/esm-register src/sweep-worker.ts",
     "build": "tsc",
     "lint": "eslint .",
     "test": "node --import @swc-node/register/esm-register --test \"tests/**/*.test.ts\"",

@@ -2,7 +2,7 @@ import { injectable } from 'tsyringe'
 import type { StoredGridPoint } from '../../domain/models/grid-point'
 import { Clock } from '../../core/clock.service'
 import { Env } from '../../core/env.service'
-import { HttpClient } from './http-client.service'
+import { HttpClientService } from './http-client.service'
 
 /** Two forecast days at hourly resolution — 48 Forecasts per Grid Point per call. */
 const FORECAST_DAYS = 2
@@ -75,7 +75,7 @@ function parseUtcHour(time: string): Date {
 @injectable()
 export class OpenMeteoHttpDataSource {
   constructor(
-    private readonly httpClient: HttpClient,
+    private readonly httpClient: HttpClientService,
     private readonly clock: Clock,
   ) {}
 
@@ -87,7 +87,17 @@ export class OpenMeteoHttpDataSource {
       return { forecasts: [], fetchedAt: this.clock.now() }
     }
 
-    const body = await this.httpClient.getJson<unknown>(OpenMeteoHttpDataSource.buildRequestUrl(gridPoints), {
+    const body = await this.httpClient.request<unknown>(Env.OPEN_METEO_FORECAST_URL, {
+      method: 'GET',
+      params: {
+        latitude: gridPoints.map((point) => point.latitude).join(','),
+        longitude: gridPoints.map((point) => point.longitude).join(','),
+        hourly: 'temperature_2m',
+        forecast_days: FORECAST_DAYS,
+        temperature_unit: 'celsius',
+        timeformat: 'iso8601',
+        timezone: 'UTC',
+      },
       signal: options?.signal,
       observer: {
         onAttempt: () => options?.onUpstreamCall?.(),
@@ -103,19 +113,6 @@ export class OpenMeteoHttpDataSource {
       forecasts: OpenMeteoHttpDataSource.toForecasts(gridPoints, body),
       fetchedAt: this.clock.now(),
     }
-  }
-
-  private static buildRequestUrl(gridPoints: readonly StoredGridPoint[]): string {
-    const params = new URLSearchParams({
-      latitude: gridPoints.map((point) => point.latitude).join(','),
-      longitude: gridPoints.map((point) => point.longitude).join(','),
-      hourly: 'temperature_2m',
-      forecast_days: String(FORECAST_DAYS),
-      temperature_unit: 'celsius',
-      timeformat: 'iso8601',
-      timezone: 'UTC',
-    })
-    return `${Env.OPEN_METEO_FORECAST_URL}?${params.toString()}`
   }
 
   /**

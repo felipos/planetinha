@@ -6,14 +6,14 @@ import type { OpenMeteoHttpDataSource } from '../../src/datasource/http/open-met
 import type { GridPointsDbDataSource } from '../../src/datasource/db/grid-points.db.datasource'
 import type { SweepConfig } from '../../src/core/sweep-config'
 import { Clock } from '../../src/core/clock.service'
-import { FixedClock } from '../fixtures/clock.fixture'
+import { FixedClock } from '../fixtures/clock.mock'
 import {
   WINDOW_START,
   createFakeForecastSource,
   createRecordingLogger,
-} from '../fixtures/forecast-source.fixture'
-import { createFakeGridPointsDataSource, storedGridPoints } from '../fixtures/grid-points-datasource.fixture'
-import { createFakeSweepsDataSource, type FakeSweepsDataSource } from '../fixtures/sweeps-datasource.fixture'
+} from '../fixtures/forecast-source.mock'
+import { createFakeGridPointsDataSource, storedGridPoints } from '../fixtures/grid-points-datasource.mock'
+import { createFakeSweepsDataSource, type FakeSweepsDataSource } from '../fixtures/sweeps-datasource.mock'
 
 const NOW = new Date('2026-08-31T09:00:00.000Z')
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1_000

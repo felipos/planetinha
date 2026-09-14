@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { StoredGridPoint } from '../../src/domain/models/grid-point'
 import { AbortErrorDetector } from '../../src/domain/utils/abort-error'
 import { Clock } from '../../src/core/clock.service'
-import { HttpClient } from '../../src/datasource/http/http-client.service'
+import { HttpClientService } from '../../src/datasource/http/http-client.service'
 import { OpenMeteoHttpDataSource } from '../../src/datasource/http/open-meteo.http.datasource'
 
 const HOURS_IN_WINDOW = 48
@@ -16,7 +16,6 @@ function gridPoints(count: number): StoredGridPoint[] {
     id: index + 1,
     latitude: -90 + index,
     longitude: -180 + index,
-    resolutionDegrees: 5,
   }))
 }
 
@@ -49,7 +48,7 @@ function jsonResponse(body: unknown, init?: { status?: number; headers?: Record<
 }
 
 function createDataSource(): OpenMeteoHttpDataSource {
-  return new OpenMeteoHttpDataSource(new HttpClient(), new Clock())
+  return new OpenMeteoHttpDataSource(new HttpClientService(), new Clock())
 }
 
 describe('OpenMeteoHttpDataSource', () => {

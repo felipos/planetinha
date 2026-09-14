@@ -2,9 +2,9 @@ import { doublePrecision, pgTable, serial, uniqueIndex } from 'drizzle-orm/pg-co
 
 /**
  * The Grid, materialised. Nothing recomputes Grid Points at runtime; this table is the source
- * of truth, and a Sweep's cursor is an id from it. `resolution_degrees` is stored per row so
- * that a reseed at a different Resolution cannot silently produce a Snapshot mixing two
- * lattices.
+ * of truth, and a Sweep's cursor is an id from it. The Grid has a single Resolution
+ * (`GRID_RESOLUTION_DEGREES`) for the foreseeable future, so it is a code constant rather than a
+ * column — see `0006-resolution-is-a-code-constant-not-stored-data.md`.
  */
 export const gridPoints = pgTable(
   'grid_points',
@@ -12,9 +12,6 @@ export const gridPoints = pgTable(
     id: serial('id').primaryKey(),
     latitude: doublePrecision('latitude').notNull(),
     longitude: doublePrecision('longitude').notNull(),
-    resolutionDegrees: doublePrecision('resolution_degrees').notNull(),
   },
-  (table) => [
-    uniqueIndex('grid_points_position_idx').on(table.latitude, table.longitude, table.resolutionDegrees),
-  ],
+  (table) => [uniqueIndex('grid_points_position_idx').on(table.latitude, table.longitude)],
 )

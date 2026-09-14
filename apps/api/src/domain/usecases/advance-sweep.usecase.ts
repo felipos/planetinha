@@ -5,7 +5,6 @@ import type { Sweep } from '../models/sweep'
 import type { TickOutcome } from '../models/tick-outcome'
 import { AbortErrorDetector } from '../utils/abort-error'
 import { Clock } from '../../core/clock.service'
-import { GRID_RESOLUTION_DEGREES } from '../../core/config'
 import { Logger } from '../../core/logger.service'
 import type { SweepConfig } from '../../core/sweep-config'
 import { GridPointsDbDataSource } from '../../datasource/db/grid-points.db.datasource'
@@ -34,9 +33,9 @@ export class AdvanceSweepUseCase {
   async execute(signal?: AbortSignal): Promise<TickOutcome> {
     const openSweep = await this.sweepsDataSource.findOpenSweep()
     if (openSweep === null) {
-      return await this.startSweepIfDue()
+      return this.startSweepIfDue()
     }
-    return await this.advanceOneSlice(openSweep, signal)
+    return this.advanceOneSlice(openSweep, signal)
   }
 
   private async startSweepIfDue(): Promise<TickOutcome> {
@@ -46,7 +45,7 @@ export class AdvanceSweepUseCase {
       return { kind: 'idle' }
     }
 
-    const totalGridPointCount = await this.gridPointsDataSource.countGridPoints(GRID_RESOLUTION_DEGREES)
+    const totalGridPointCount = await this.gridPointsDataSource.countGridPoints()
     const sweep = await this.sweepsDataSource.startSweep(now, totalGridPointCount)
     this.logger.info('Sweep started', { sweepId: sweep.id, totalGridPointCount })
     return { kind: 'sweep-started', sweep }
@@ -56,7 +55,6 @@ export class AdvanceSweepUseCase {
     const slice = await this.gridPointsDataSource.findSliceAfter(
       sweep.cursorGridPointId,
       this.config.sliceSize,
-      GRID_RESOLUTION_DEGREES,
     )
 
     if (slice.length === 0) {

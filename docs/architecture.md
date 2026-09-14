@@ -37,7 +37,7 @@ src/
 │   └── utils/             # Stateless calculation/algorithm classes (color scale, interpolation, grid generation, ...)
 ├── datasource/
 │   ├── db/                # Direct database access, one class per table/entity (api only)
-│   └── http/               # Direct HTTP access: a shared HttpClient, one class per external API
+│   └── http/               # Direct HTTP access: a shared HttpClientService, one class per external API
 ├── di-container.ts        # tsyringe container registration — the only file allowed to call container.register*
 └── presentation/           # React components and hooks (the only layer allowed to know about React/DOM)
     ├── components/
@@ -60,7 +60,7 @@ domain/usecases
 
 datasource
     └──> domain/models (for the shapes it returns)
-    └──> core (for Env, Logger, HttpClient)
+    └──> core (for Env, Logger, HttpClientService)
 
 domain/models, domain/utils
     (no outgoing dependencies on the other layers)
@@ -121,8 +121,9 @@ an `observedAt` would be claiming something false: nothing observed these values
 
 `null` is used explicitly to mean "no data available" and must never be conflated with a real value like `0`.
 
-A validator is a dedicated `*.validator.ts` file with a class of `static` methods, next to the model it validates inside `models/`
-(`forecast.ts` holds the `Forecast` interface; `forecast.validator.ts` holds `ForecastValidator`).
+A validator over a domain model is a dedicated `*.validator.ts` file with a class of `static` methods, living in `utils/` alongside the rest
+of the stateless domain logic (`forecast.ts` in `models/` holds the `Forecast` interface; `forecast.validator.ts` in `utils/` holds
+`ForecastValidator`). A validator over a wire payload instead stays in the datasource that receives it — see `datasource/http/` below.
 
 State-shape types — discriminated unions that make illegal UI states unrepresentable — are also domain concepts and live in `models/` too —
 e.g. `DataFetchStatus` (`idle | loading | success | initial-load | partial-success | stale-error | hard-error`, where `initial-load` and
@@ -138,7 +139,7 @@ decorator metadata.
 ```typescript
 @injectable()
 export class FetchSnapshotUseCase {
-  constructor(private readonly dataSource: PlanetinhaHttpDataSource) {}
+  constructor(private readonly dataSource: ForecastHttpDataSource) {}
 
   execute(signal?: AbortSignal): Promise<Snapshot> {
     return this.dataSource.fetchSnapshot(signal)
@@ -168,18 +169,19 @@ direct HTTP calls.
 
 #### `datasource/http/`
 
-`HttpClient` (`http-client.service.ts`) is an `@injectable()` class every HTTP-calling datasource constructor-injects instead of calling
-`fetch` directly. It wraps `fetch` with retry-with-backoff on HTTP 429 and abort propagation — generic HTTP-transport concerns every
-datasource gets for free. It knows nothing about any specific API's response shape; that stays in the datasource.
+`HttpClientService` (`http-client.service.ts`) is an `@injectable()` class every HTTP-calling datasource constructor-injects instead of
+calling `fetch` directly. Its one method, `request<T>(baseUrl, { method, params, signal, observer })`, wraps `fetch` with retry-with-backoff
+on HTTP 429, abort propagation, and query-string assembly — generic HTTP-transport concerns every datasource gets for free, including never
+having to assemble a URL by hand. It knows nothing about any specific API's response shape; that stays in the datasource.
 
 A datasource is a concrete `@injectable()` class named after the external API it calls (e.g. `open-meteo.http.datasource.ts` →
-`OpenMeteoHttpDataSource`, api only), constructor-injecting `HttpClient`:
+`OpenMeteoHttpDataSource`, api only), constructor-injecting `HttpClientService`:
 
 ```typescript
 @injectable()
 export class OpenMeteoHttpDataSource {
   constructor(
-    private readonly httpClient: HttpClient,
+    private readonly httpClient: HttpClientService,
     private readonly clock: Clock,
   ) {}
 
@@ -191,7 +193,8 @@ export class OpenMeteoHttpDataSource {
 
 Rules:
 
-- Make every HTTP call through `HttpClient` — never call `fetch` directly.
+- Make every HTTP call through `HttpClientService` — never call `fetch` directly, and never assemble a query string by hand; pass `params`
+  instead.
 - Do all response parsing/mapping to domain models _inside_ the datasource.
 - Throw a plain `Error` with a human-readable message on failure (see **Error Handling** below).
 - Respect the `AbortSignal` passed into every method — this is what lets `presentation` cancel a stale fetch (e.g. React `StrictMode`'s
@@ -209,18 +212,17 @@ domain concept assembled in `domain/`, not a table.
 export class ForecastsDbDataSource {
   constructor(private readonly database: Database) {}
 
-  async findStoredForecasts(
-    validAt: Date,
-    resolutionDegrees: number,
-  ): Promise<readonly StoredSnapshotForecast[]> {
+  async findStoredForecasts(validAt: Date): Promise<readonly StoredSnapshotForecast[]> {
     /* ... */
   }
 }
 ```
 
 `db/entities/` holds the Drizzle table definitions, one file per table (`*.entity.ts`), with `entities/schema.ts` re-exporting all of them
-for the Drizzle client and `drizzle-kit`. `database.service.ts` (the shared Postgres connection) and `database-readiness.service.ts` (the
-boot check) live directly under `datasource/db/`, shared by every table's datasource rather than duplicated.
+for the Drizzle client and `drizzle-kit`. `database.service.ts` (the shared Postgres connection) lives directly under `datasource/db/`,
+shared by every table's datasource rather than duplicated. The boot check that used to live alongside it is now
+`VerifyDatabaseReadinessUseCase` in `domain/usecases/` — it constructor-injects `Database` like any other use case, since checking the
+database is business logic (deciding the process must not start), not a datasource concern.
 
 Rules:
 
@@ -301,9 +303,9 @@ This project does **not** use a `Result<T, E>` return type on every function. In
 ```typescript
 // ✅ Correct — throw at the boundary, convert to explicit state at the presentation edge
 @injectable()
-export class PlanetinhaHttpDataSource {
+export class ForecastHttpDataSource {
   async fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
-    const body = await this.httpClient.getJson<unknown>(SNAPSHOT_PATH, { signal })
+    const body = await this.httpClient.request<unknown>(SNAPSHOT_PATH, { method: 'GET', signal })
     return SnapshotResponseValidator.toSnapshot(body) // throws a stated error on a malformed body
   }
 }
@@ -347,7 +349,7 @@ constructor-inject the datasource(s) it needs directly, expose `execute()`.
 ### 3. Implement the datasource
 
 Create `src/datasource/http/<provider>.http.datasource.ts`, an `@injectable()` class named after the external API, constructor-injecting
-`HttpClient` for the call and validating the response body before returning it.
+`HttpClientService` for the call and validating the response body before returning it.
 
 Note what does **not** happen here: the frontend does not gain a datasource for a weather provider directly. New data comes from
 Planetinha's own backend — see `docs/adr/0002-backend-is-the-sole-open-meteo-client.md`. On the api side, the provider-facing datasource is
@@ -388,24 +390,23 @@ apps/api/src/
 ├── core/                 # Env, config.ts, sweep-config.ts, Logger
 ├── domain/
 │   ├── models/            # Grid Point, Forecast, Sweep, Snapshot, TickOutcome + validators
-│   ├── usecases/          # GetSnapshotUseCase, AdvanceSweepUseCase, CheckHealthUseCase
+│   ├── usecases/          # GetSnapshotUseCase, AdvanceSweepUseCase, CheckHealthUseCase, VerifyDatabaseReadinessUseCase
 │   └── utils/
 ├── datasource/
 │   ├── db/
 │   │   ├── entities/       # forecasts.entity.ts, grid-points.entity.ts, sweeps.entity.ts, schema.ts
 │   │   ├── database.service.ts
-│   │   ├── database-readiness.service.ts
 │   │   ├── forecasts.db.datasource.ts
 │   │   ├── grid-points.db.datasource.ts
 │   │   └── sweeps.db.datasource.ts
 │   └── http/
 │       ├── http-client.service.ts
 │       └── open-meteo.http.datasource.ts  # The api's one door to the upstream weather provider
-├── presentation/routes/  # HTTP routes: request in, use case out, response body back
+├── presentation/routes/  # HTTP routes: request in, use case out, response back
 ├── di-container.ts       # Registers Database and Logger as singletons — nothing else needs it
 ├── server.ts              # Builds the Fastify instance WITHOUT listening — the test seam
 ├── main.ts                # Entrypoint: the api
-├── worker.ts               # Entrypoint: the worker
+├── sweep-worker.ts         # Entrypoint: the Sweep Worker
 └── scripts/                # migrate.ts, seed-grid.ts — run explicitly, never on boot
 ```
 
@@ -417,7 +418,7 @@ A route translates an HTTP request into a use-case call and its result into a re
 ```typescript
 export class SnapshotRoute {
   static register(app: FastifyInstance, getSnapshotUseCase: GetSnapshotUseCase): void {
-    app.get('/api/snapshot', async () => SnapshotRoute.toBody(await getSnapshotUseCase.execute()))
+    app.get('/api/snapshot', async () => SnapshotRoute.toResponse(await getSnapshotUseCase.execute()))
   }
 }
 ```
@@ -442,7 +443,7 @@ Node's built-in runner (`node:test`), at three seams, all with no database and n
 - `tests/unit/` — the upstream datasource with `fetch` mocked, and pure domain classes. This is where the provider's payload shape is pinned
   down, which the fakes in the seam above cannot do.
 
-Fakes live in `tests/fixtures/` with the `*.fixture.ts` suffix, and a fake models the real thing's _rules_ — the in-memory Sweeps fake keys
+Fakes live in `tests/fixtures/` with the `*.mock.ts` suffix, and a fake models the real thing's _rules_ — the in-memory Sweeps fake keys
 Forecasts by (Grid Point, Valid At) exactly as the table does, so a replayed Slice overwrites there too.
 
 ### The loader
@@ -454,8 +455,8 @@ touching the loader, the test command, or the Dockerfile.
 
 ### Two entrypoints, one image
 
-`main.ts` serves and `worker.ts` sweeps, from one codebase and one image, differing only by npm script. Exactly one process may call the
-weather provider — a worker embedded in the api would multiply upstream traffic by the api's replica count — so **never** move
+`main.ts` serves and `sweep-worker.ts` sweeps, from one codebase and one image, differing only by npm script. Exactly one process may call
+the weather provider — a Sweep Worker embedded in the api would multiply upstream traffic by the api's replica count — so **never** move
 provider-calling code into a route or a Fastify plugin.
 
 Both entrypoints fail fast at boot when the schema is missing or the Grid has not been seeded, with an instruction naming the step. Nothing

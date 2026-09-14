@@ -7,8 +7,8 @@ import { GetSnapshotUseCase } from '../../src/domain/usecases/get-snapshot.useca
 import { DiContainer } from '../../src/di-container'
 import { Clock } from '../../src/core/clock.service'
 import { Server } from '../../src/server'
-import { createFakeForecastsDataSource } from '../fixtures/forecasts-datasource.fixture'
-import { createFakeSweepsDataSource } from '../fixtures/sweeps-datasource.fixture'
+import { createFakeForecastsDataSource } from '../fixtures/forecasts-datasource.mock'
+import { createFakeSweepsDataSource } from '../fixtures/sweeps-datasource.mock'
 
 function buildServer(): ReturnType<typeof Server.build> {
   const clock = new Clock()

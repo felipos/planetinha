@@ -27,5 +27,5 @@ ENV NODE_ENV=production
 WORKDIR /app/apps/api
 USER node
 
-# Overridden per service in compose: the api serves, the worker sweeps.
+# Overridden per service in compose: the api serves, the Sweep Worker sweeps.
 CMD ["npm", "run", "start"]

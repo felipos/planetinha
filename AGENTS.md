@@ -6,6 +6,12 @@
 
 - Every new code should have its respective test cases.
 
+- A function or method that takes more than 2 parameters takes a single options object instead. Two positional parameters or fewer stay
+  positional — the rule exists to keep a call site self-describing once there's enough going on that argument order stops being obvious, not
+  to force an object around every call. This applies to plain data parameters; a class constructor's injected dependencies and a React
+  component's props are unaffected (dependencies are one per line by convention regardless of count, and props are already an object by how
+  JSX works).
+
 ## Classes over functions
 
 - Domain, application, and infrastructure logic (use cases, data sources, services, validators, and other pure domain logic) is written as
@@ -45,7 +51,7 @@
   - HTTP route (api only) → `*.route.ts` (e.g. `snapshot.route.ts`)
   - React hook → `*.hook.ts`
   - React component → `*.component.tsx`
-  - Test fixture → `*.fixture.ts`
+  - Test fixture/mock → `*.mock.ts`
 - A CSS file paired with a component keeps the component's plain kebab-case name, with no `.component` suffix
   (`data-status-banner.component.tsx` pairs with `data-status-banner.css`).
 - Plain domain value types/interfaces that aren't a "layer" (e.g. `temperature-reading.ts`, `temperature-grid.ts`) keep a bare kebab-case
@@ -56,7 +62,7 @@
 ## Workspaces
 
 The repo is a two-package workspace, and both packages follow the same layering, dependency injection, and file-role naming suffixes — there
-is one architecture to learn. `apps/api` differs from `apps/web` in exactly four ways:
+is one architecture to learn. `apps/api` differs from `apps/web` in exactly three ways:
 
 - It runs TypeScript through `@swc-node/register`, which is not a free choice: tsyringe needs `emitDecoratorMetadata`, and the obvious
   modernisations fail — one at parse time, one silently at runtime. See `docs/adr/0004-swc-register-required-by-tsyringe.md` before changing
@@ -64,19 +70,19 @@ is one architecture to learn. `apps/api` differs from `apps/web` in exactly four
 - Its test runner is Node's built-in one (`node:test`), not Vitest.
 - Its presentation layer is HTTP routes rather than React, and it adds the `*.entity.ts` and `*.route.ts` role suffixes, plus the
   `datasource/db/` layer (`apps/web` only ever has `datasource/http/`).
-- **Every dependency it adds is pinned to an exact version.** `apps/web`'s existing ranges are deliberately left alone; the pinning rule
-  applies going forward.
 
-`apps/api` is one package with two entrypoints — `src/main.ts` serves, `src/worker.ts` sweeps — and one image. Exactly one process may make
-upstream calls, so nothing that calls the weather provider may be moved into the api's request path.
+`apps/api` is one package with two entrypoints — `src/main.ts` serves, `src/sweep-worker.ts` sweeps — and one image. Exactly one process may
+make upstream calls, so nothing that calls the weather provider may be moved into the api's request path.
 
 ## HTTP calls
 
-- Every data source that needs to make an HTTP call goes through `HttpClient` (`src/datasource/http/http-client.service.ts` in either
-  package) instead of calling `fetch` directly. `HttpClient` is a thin wrapper around `fetch` that also handles retry-with-backoff on HTTP
-  429 and abort propagation, so every data source gets that behavior for free instead of reimplementing it.
-- Data-source-specific concerns (batching, response shape, mapping to domain models) stay in the data source itself — `HttpClient` only
-  knows about HTTP, never about any particular API's response format.
+- Every data source that needs to make an HTTP call goes through `HttpClientService` (`src/datasource/http/http-client.service.ts` in either
+  package) instead of calling `fetch` directly. `HttpClientService` is a thin wrapper around `fetch` that also handles retry-with-backoff on
+  HTTP 429 and abort propagation, so every data source gets that behavior for free instead of reimplementing it.
+- Its one method, `request<T>(baseUrl, { method, params, signal })`, also assembles the query string from `params` — a data source passes a
+  base URL and its params, and never builds a query string or an assembled URL by hand.
+- Data-source-specific concerns (batching, response shape, mapping to domain models) stay in the data source itself — `HttpClientService`
+  only knows about HTTP, never about any particular API's response format.
 
 ## Environment variables
 
@@ -88,8 +94,8 @@ upstream calls, so nothing that calls the weather provider may be moved into the
 - `apps/api/.env` is read only on the host. Containers get their values from `compose.yaml`. The database connection string necessarily has
   two different values, and the two live in those two separate places on purpose — see `docs/running.md`.
 - Values that a use case depends on (Slice size, the Sweep interval) are read from `Env` and built into a plain config value at the
-  composition root (`worker.ts`, for `SweepConfig`), then passed straight into the use case's constructor — so a use case depends on the
-  value rather than on where it came from, with no DI token needed for a plain (non-class) value.
+  composition root (`sweep-worker.ts`, for `SweepConfig`), then passed straight into the use case's constructor — so a use case depends on
+  the value rather than on where it came from, with no DI token needed for a plain (non-class) value.
 
 ## Comments
 
@@ -119,7 +125,7 @@ Each `it` should separate the three phases with comments (or equivalent blocks).
 it('propagates a rejection from the data source', async () => {
   // Arrange
   const dataSource = createFakeDataSource(async () => {
-    throw new Error('Open-Meteo indisponível')
+    throw new Error('Open-Meteo is unavailable')
   })
   const useCase = new FetchSnapshotUseCase(dataSource)
 
@@ -127,7 +133,7 @@ it('propagates a rejection from the data source', async () => {
   const resultPromise = useCase.execute()
 
   // Assert
-  await expect(resultPromise).rejects.toThrow('Open-Meteo indisponível')
+  await expect(resultPromise).rejects.toThrow('Open-Meteo is unavailable')
 })
 ```
 
@@ -141,7 +147,7 @@ Import shared fixtures from `tests/fixtures/` (create the folder the first time 
 Prefer spreading to override specific fields instead of duplicating the whole object:
 
 ```typescript
-import { mockSnapshot } from '../fixtures/snapshot.fixture'
+import { mockSnapshot } from '../fixtures/snapshot.mock'
 
 const partiallyCoveredSnapshot = {
   ...mockSnapshot,
@@ -149,8 +155,8 @@ const partiallyCoveredSnapshot = {
 }
 ```
 
-A fixture file gets the `*.fixture.ts` suffix, following the same layer-suffix convention as the rest of the codebase (see Naming
-Conventions above).
+A fixture file gets the `*.mock.ts` suffix, following the same layer-suffix convention as the rest of the codebase (see Naming Conventions
+above).
 
 ## Agent skills
 

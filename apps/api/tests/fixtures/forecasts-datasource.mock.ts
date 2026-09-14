@@ -1,4 +1,3 @@
-import { GRID_RESOLUTION_DEGREES } from '../../src/core/config'
 import type { ForecastsDbDataSource } from '../../src/datasource/db/forecasts.db.datasource'
 import { GridEnumerator } from '../../src/domain/utils/grid-enumeration'
 import type { StoredSnapshotForecast } from '../../src/domain/utils/snapshot-assembly'
@@ -45,7 +44,7 @@ export function storedGrid(
   temperature: (point: { latitude: number; longitude: number }) => number | null,
   fetchedAt = new Date('2026-08-31T09:12:00.000Z'),
 ): readonly StoredSnapshotForecast[] {
-  return GridEnumerator.enumerate(GRID_RESOLUTION_DEGREES).map((point) => {
+  return GridEnumerator.enumerate().map((point) => {
     const temperatureCelsius = temperature(point)
     return {
       latitude: point.latitude,

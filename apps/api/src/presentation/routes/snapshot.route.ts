@@ -12,7 +12,7 @@ import type { SweepStatus } from '../../domain/models/sweep'
  * assembled per hour from whatever Forecasts exist and may hold rows written by different
  * Sweeps, so a single response-level fetch time would be a lie. Fetched At is per Forecast.
  */
-export interface SnapshotForecastBody {
+export interface SnapshotForecastResponse {
   readonly latitude: number
   readonly longitude: number
   /** `null` is No Data — never zero, which is a real temperature. */
@@ -20,22 +20,22 @@ export interface SnapshotForecastBody {
   readonly fetchedAt: string | null
 }
 
-export interface SnapshotBody {
+export interface SnapshotResponse {
   readonly validAt: string
   readonly resolutionDegrees: number
   readonly coverage: { readonly total: number; readonly withData: number }
   readonly sweep: { readonly status: SweepStatus | null; readonly completedAt: string | null }
-  readonly forecasts: readonly SnapshotForecastBody[]
+  readonly forecasts: readonly SnapshotForecastResponse[]
 }
 
 export class SnapshotRoute {
   static register(app: FastifyInstance, getSnapshotUseCase: GetSnapshotUseCase): void {
-    app.get('/api/snapshot', async (): Promise<SnapshotBody> => {
-      return SnapshotRoute.toBody(await getSnapshotUseCase.execute())
+    app.get('/api/snapshot', async (): Promise<SnapshotResponse> => {
+      return SnapshotRoute.toResponse(await getSnapshotUseCase.execute())
     })
   }
 
-  private static toBody(snapshot: Snapshot): SnapshotBody {
+  private static toResponse(snapshot: Snapshot): SnapshotResponse {
     return {
       validAt: snapshot.validAt.toISOString(),
       resolutionDegrees: snapshot.resolutionDegrees,

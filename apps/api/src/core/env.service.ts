@@ -36,14 +36,14 @@ export class Env {
     return Env.optionalNumber('SLICE_SIZE', 100)
   }
 
-  /** How long the worker waits between Ticks. One Slice is advanced per Tick, at most. */
-  static get TICK_INTERVAL_MS(): number {
-    return Env.optionalNumber('TICK_INTERVAL_MS', 60_000)
+  /** How long the Sweep Worker waits between Ticks. One Slice is advanced per Tick, at most. */
+  static get SWEEP_WORKER_TICK_INTERVAL_MS(): number {
+    return Env.optionalNumber('SWEEP_WORKER_TICK_INTERVAL_MS', 60_000)
   }
 
   /** How long after a Sweep starts the next one becomes due. Twice a day is 12 hours. */
-  static get SWEEP_INTERVAL_MS(): number {
-    return Env.optionalNumber('SWEEP_INTERVAL_MS', 12 * 60 * 60 * 1_000)
+  static get SWEEP_WORKER_SWEEP_INTERVAL_MS(): number {
+    return Env.optionalNumber('SWEEP_WORKER_SWEEP_INTERVAL_MS', 12 * 60 * 60 * 1_000)
   }
 
   protected static required(key: string): string {

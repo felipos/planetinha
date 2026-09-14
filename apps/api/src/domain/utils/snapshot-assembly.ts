@@ -1,5 +1,5 @@
 import type { Coverage, SnapshotForecast } from '../models/snapshot'
-import { GridEnumerator } from './grid-enumeration'
+import { PoleExpansion } from './pole-expansion'
 
 /** One Grid Point's stored state for an hour: the position, and its Forecast if it has one. */
 export interface StoredSnapshotForecast {
@@ -10,33 +10,21 @@ export interface StoredSnapshotForecast {
 }
 
 /**
- * Turns what is stored into the uniform lattice the wire describes. Two things happen here, and
- * both exist so that a caller never has to know how the Grid is stored:
- *
- * - Each pole is stored once but named by all 72 longitudes, so it is expanded back across
- *   every longitude column. Pole dedup is a Budget optimisation and must not be visible.
- * - Every Grid Point of the expanded Grid appears, with `null` where there is No Data. The
- *   endpoint never omits a Grid Point, and `null` is never zero.
+ * Turns what is stored into the uniform lattice the wire describes: every Grid Point of the
+ * expanded Grid appears, with `null` where there is No Data. The endpoint never omits a Grid
+ * Point, and `null` is never zero. Pole Expansion is what makes the stored (deduplicated) Grid
+ * look like the full one to a caller — see `PoleExpansion`.
  */
 export class SnapshotAssembler {
-  static expand(
-    stored: readonly StoredSnapshotForecast[],
-    resolutionDegrees: number,
-  ): readonly SnapshotForecast[] {
-    const longitudeColumns = Math.round(360 / resolutionDegrees)
+  static expand(stored: readonly StoredSnapshotForecast[]): readonly SnapshotForecast[] {
     const expanded: SnapshotForecast[] = []
 
     for (const point of stored) {
-      if (point.latitude !== 90 && point.latitude !== -90) {
+      if (!PoleExpansion.isPole(point.latitude)) {
         expanded.push(point)
         continue
       }
-      for (let column = 0; column < longitudeColumns; column += 1) {
-        expanded.push({
-          ...point,
-          longitude: GridEnumerator.roundCoordinate(-180 + column * resolutionDegrees),
-        })
-      }
+      expanded.push(...PoleExpansion.expand(point))
     }
 
     return expanded
@@ -46,9 +34,9 @@ export class SnapshotAssembler {
    * Coverage counts the expanded lattice, so it is directly comparable with the number of
    * Forecasts a caller receives.
    */
-  static coverageOf(forecasts: readonly SnapshotForecast[], resolutionDegrees: number): Coverage {
+  static coverageOf(forecasts: readonly SnapshotForecast[]): Coverage {
     return {
-      total: GridEnumerator.expandedPointCount(resolutionDegrees),
+      total: PoleExpansion.count(),
       withData: forecasts.filter((forecast) => forecast.temperatureCelsius !== null).length,
     }
   }

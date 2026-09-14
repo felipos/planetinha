@@ -24,20 +24,19 @@ export class GetSnapshotUseCase {
 
   async execute(): Promise<Snapshot> {
     const currentHour = Hours.floor(this.clock.now())
-    const validAt =
-      (await this.forecastsDataSource.findValidAtToServe(currentHour, GRID_RESOLUTION_DEGREES)) ?? currentHour
+    const validAt = (await this.forecastsDataSource.findValidAtToServe(currentHour)) ?? currentHour
 
     const [stored, sweep] = await Promise.all([
-      this.forecastsDataSource.findStoredForecasts(validAt, GRID_RESOLUTION_DEGREES),
+      this.forecastsDataSource.findStoredForecasts(validAt),
       this.sweepsDataSource.findSweepState(),
     ])
 
-    const forecasts = SnapshotAssembler.expand(stored, GRID_RESOLUTION_DEGREES)
+    const forecasts = SnapshotAssembler.expand(stored)
 
     return {
       validAt,
       resolutionDegrees: GRID_RESOLUTION_DEGREES,
-      coverage: SnapshotAssembler.coverageOf(forecasts, GRID_RESOLUTION_DEGREES),
+      coverage: SnapshotAssembler.coverageOf(forecasts),
       sweep,
       forecasts,
     }

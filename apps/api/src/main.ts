@@ -2,8 +2,8 @@ import 'reflect-metadata'
 import { container } from 'tsyringe'
 import { CheckHealthUseCase } from './domain/usecases/check-health.usecase'
 import { GetSnapshotUseCase } from './domain/usecases/get-snapshot.usecase'
+import { VerifyDatabaseReadinessUseCase } from './domain/usecases/verify-database-readiness.usecase'
 import { DiContainer } from './di-container'
-import { DatabaseReadiness } from './datasource/db/database-readiness.service'
 import { Env } from './core/env.service'
 import { Server } from './server'
 
@@ -14,7 +14,7 @@ DiContainer.setup()
 // Fail fast, before binding a port: the api must never serve against a database that was never
 // migrated or a Grid that was never seeded.
 try {
-  await container.resolve(DatabaseReadiness).verify()
+  await container.resolve(VerifyDatabaseReadinessUseCase).execute()
 } catch (error) {
   console.error(error instanceof Error ? error.message : error)
   process.exit(1)

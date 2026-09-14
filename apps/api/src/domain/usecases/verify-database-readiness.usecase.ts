@@ -1,7 +1,7 @@
 import { count } from 'drizzle-orm'
 import { injectable } from 'tsyringe'
-import { Database } from './database.service'
-import { gridPoints } from './entities/schema'
+import { Database } from '../../datasource/db/database.service'
+import { gridPoints } from '../../datasource/db/entities/schema'
 
 /** Postgres reports a query against a table that does not exist as `undefined_table`. */
 const UNDEFINED_TABLE = '42P01'
@@ -29,12 +29,16 @@ function isUndefinedTable(error: unknown): boolean {
  * step that was skipped. Migrating and seeding are deliberately manual — no process does either
  * as a side effect of starting — so a forgotten step is expected, and it must produce something
  * an operator can act on rather than a stack trace from the first real query.
+ *
+ * Boot-only and never wired to an HTTP route, unlike `CheckHealthUseCase`: a liveness probe has
+ * to stay cheap enough to call every few seconds, and a database round trip on every call would
+ * defeat that.
  */
 @injectable()
-export class DatabaseReadiness {
+export class VerifyDatabaseReadinessUseCase {
   constructor(private readonly database: Database) {}
 
-  async verify(): Promise<void> {
+  async execute(): Promise<void> {
     let gridPointCount: number
     try {
       const [row] = await this.database.drizzle.select({ value: count() }).from(gridPoints)
