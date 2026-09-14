@@ -15,8 +15,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . '!.data'",
+    "format:check": "prettier --check . '!.data'",
     "prepare": "husky"
   },
   "lint-staged": {

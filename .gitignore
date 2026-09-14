@@ -15,6 +15,13 @@ dist-ssr
 .env.*
 !.env.example
 
+# Container env — see docker.env.example for the required keys
+docker.env
+!docker.env.example
+
+# Bind-mounted container state (compose.yaml) — kept out of the repo, not the same as .env above
+.data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

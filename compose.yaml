@@ -1,8 +1,8 @@
-# The whole stack: Postgres, the api, the worker, and a reverse proxy serving the built frontend.
+# The whole stack: Postgres, the api, the Sweep Worker, and a reverse proxy serving the built frontend.
 #
 # Nothing here migrates or seeds the database. Both steps are run explicitly from the host against
-# the published Postgres port, and the api and the worker fail fast with an instruction naming the
-# step that was skipped — see docs/running.md.
+# the published Postgres port, and the api and the Sweep Worker fail fast with an instruction naming
+# the step that was skipped — see docs/running.md.
 #
 # The dev frontend is deliberately NOT containerised: run it on the host with `npm run dev
 # --workspace @planetinha/web`, which proxies the API path to this stack and keeps hot module reloading.
@@ -18,7 +18,10 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - postgres-data:/var/lib/postgresql
+      # A bind mount into .data/ (gitignored) rather than a Docker-managed named volume, so every
+      # container's on-disk state lives under one directory at the repo root instead of scattered
+      # in Docker's own storage area.
+      - ./.data/postgres-data:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U planetinha -d planetinha']
       interval: 5s
@@ -31,13 +34,11 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     command: npm run start
-    environment:
-      # The container's connection string, reaching Postgres by service name. The host's lives in
-      # apps/api/.env and points at the published port instead — two values on purpose, kept
-      # apart so neither context can read the other's.
-      DATABASE_URL: postgres://planetinha:planetinha@postgres:5432/planetinha
-      OPEN_METEO_FORECAST_URL: https://api.open-meteo.com/v1/forecast
-      PORT: '3000'
+    # Everything this container needs, in one place — see docker.env.example. DATABASE_URL in
+    # there points at Postgres by service name, unlike the host's apps/api/.env, which points at
+    # the published port: two values on purpose, kept apart so neither context can read the
+    # other's (see docs/running.md).
+    env_file: docker.env
     # No published port: everything reaches the api through the proxy, on one address. That is
     # also what lets `docker compose up --scale api=3` work without a host port collision.
     expose:
@@ -60,17 +61,15 @@ services:
       retries: 5
     restart: unless-stopped
 
-  worker:
+  sweep-worker:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    # The same image as the api, differing only by this line. The worker is its own service and is
-    # never scaled: exactly one process may make upstream calls, because the whole Budget
+    # The same image as the api, differing only by this line. The Sweep Worker is its own service
+    # and is never scaled: exactly one process may make upstream calls, because the whole Budget
     # accounting rests on there being a single accountable caller.
-    command: npm run start:worker
-    environment:
-      DATABASE_URL: postgres://planetinha:planetinha@postgres:5432/planetinha
-      OPEN_METEO_FORECAST_URL: https://api.open-meteo.com/v1/forecast
+    command: npm run worker:sweep
+    env_file: docker.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,6 +84,3 @@ services:
     depends_on:
       - api
     restart: unless-stopped
-
-volumes:
-  postgres-data:

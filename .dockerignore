@@ -1,0 +1,10 @@
+# Neither Dockerfile ever COPYs the whole build context — each names exact paths — but the
+# context is still assembled and sent to the daemon in full, so excluding these keeps that step
+# fast and (for .data/) working at all: Postgres's own data directory contains files the daemon
+# cannot stat with the permissions they were created under.
+.data/
+node_modules
+**/node_modules
+.git
+dist
+**/dist
