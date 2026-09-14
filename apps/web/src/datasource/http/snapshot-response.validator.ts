@@ -1,4 +1,4 @@
-import { ForecastValidator } from '../../domain/models/forecast.validator'
+import { ForecastValidator } from '../../domain/utils/forecast.validator'
 import type { Forecast } from '../../domain/models/forecast'
 import type { Snapshot } from '../../domain/models/snapshot'
 
@@ -6,23 +6,22 @@ import type { Snapshot } from '../../domain/models/snapshot'
  * The wire contract with Planetinha's api, duplicated by hand on this side rather than shared
  * through a package — a validator here is what catches drift, since nothing else would.
  */
-interface SnapshotForecastBody {
+interface SnapshotForecastResponse {
   readonly latitude: number
   readonly longitude: number
   readonly temperatureCelsius: number | null
   readonly fetchedAt: string | null
 }
 
-interface SnapshotBody {
+interface SnapshotResponse {
   readonly validAt: string
   readonly resolutionDegrees: number
   readonly coverage: { readonly total: number; readonly withData: number }
   readonly sweep: { readonly status: string | null; readonly completedAt: string | null }
-  readonly forecasts: readonly SnapshotForecastBody[]
+  readonly forecasts: readonly SnapshotForecastResponse[]
 }
 
-const MALFORMED_RESPONSE_MESSAGE =
-  'A resposta da API de temperatura veio em um formato inesperado. Nenhum dado foi exibido.'
+const MALFORMED_RESPONSE_MESSAGE = 'The temperature API responded in an unexpected format. No data was shown.'
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -39,7 +38,7 @@ function isNullableString(value: unknown): value is string | null {
  */
 export class SnapshotResponseValidator {
   static toSnapshot(body: unknown): Snapshot {
-    if (!SnapshotResponseValidator.isSnapshotBody(body)) {
+    if (!SnapshotResponseValidator.isSnapshotResponse(body)) {
       throw new Error(MALFORMED_RESPONSE_MESSAGE)
     }
 
@@ -64,7 +63,7 @@ export class SnapshotResponseValidator {
     }
   }
 
-  private static isSnapshotBody(body: unknown): body is SnapshotBody {
+  private static isSnapshotResponse(body: unknown): body is SnapshotResponse {
     if (!isObject(body)) {
       return false
     }
@@ -91,10 +90,10 @@ export class SnapshotResponseValidator {
     if (!Array.isArray(body.forecasts)) {
       return false
     }
-    return body.forecasts.every((forecast: unknown) => SnapshotResponseValidator.isForecastBody(forecast))
+    return body.forecasts.every((forecast: unknown) => SnapshotResponseValidator.isForecastResponse(forecast))
   }
 
-  private static isForecastBody(forecast: unknown): forecast is SnapshotForecastBody {
+  private static isForecastResponse(forecast: unknown): forecast is SnapshotForecastResponse {
     if (!isObject(forecast)) {
       return false
     }

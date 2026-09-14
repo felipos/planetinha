@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CellLocator } from '../../src/domain/utils/cell-locator'
 import type { Snapshot } from '../../src/domain/models/snapshot'
-import { mockSnapshot } from '../fixtures/snapshot.fixture'
+import { mockSnapshot } from '../fixtures/snapshot.mock'
 
 function snapshotOf(resolutionDegrees: number, forecasts: Snapshot['forecasts']): Snapshot {
   return {

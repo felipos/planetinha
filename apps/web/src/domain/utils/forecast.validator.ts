@@ -1,4 +1,4 @@
-import type { Forecast } from './forecast'
+import type { Forecast } from '../models/forecast'
 
 export class ForecastValidator {
   static isValidLatitude(latitude: number): boolean {

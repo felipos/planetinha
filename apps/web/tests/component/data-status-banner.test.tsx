@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { axe } from 'vitest-axe'
 import { DataStatusBanner } from '../../src/presentation/components/data-status-banner/data-status-banner.component'
 import type { DataFetchStatus } from '../../src/domain/models/data-fetch-status'
-import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
+import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.mock'
 
 describe('DataStatusBanner', () => {
   it('renders nothing for idle/success (no banner needed)', () => {

@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { FetchSnapshotUseCase } from '../../src/domain/usecases/fetch-snapshot.usecase'
-import type { PlanetinhaHttpDataSource } from '../../src/datasource/http/planetinha.http.datasource'
+import type { ForecastHttpDataSource } from '../../src/datasource/http/forecast.http.datasource'
 import type { Snapshot } from '../../src/domain/models/snapshot'
-import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
+import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.mock'
 
-function createFakeDataSource(
-  behavior: (signal?: AbortSignal) => Promise<Snapshot>,
-): PlanetinhaHttpDataSource {
-  return { fetchSnapshot: behavior } as unknown as PlanetinhaHttpDataSource
+function createFakeDataSource(behavior: (signal?: AbortSignal) => Promise<Snapshot>): ForecastHttpDataSource {
+  return { fetchSnapshot: behavior } as unknown as ForecastHttpDataSource
 }
 
 describe('FetchSnapshotUseCase', () => {
@@ -45,7 +43,7 @@ describe('FetchSnapshotUseCase', () => {
   it('propagates a rejection from the data source (error path — never fails silently)', async () => {
     // Arrange
     const dataSource = createFakeDataSource(async () => {
-      throw new Error('a API do Planetinha está indisponível')
+      throw new Error('the Planetinha API is unavailable')
     })
     const useCase = new FetchSnapshotUseCase(dataSource)
 
@@ -53,7 +51,7 @@ describe('FetchSnapshotUseCase', () => {
     const resultPromise = useCase.execute()
 
     // Assert
-    await expect(resultPromise).rejects.toThrow('a API do Planetinha está indisponível')
+    await expect(resultPromise).rejects.toThrow('the Planetinha API is unavailable')
   })
 
   it('resolves again after a prior failure (stale-error → success retry path)', async () => {

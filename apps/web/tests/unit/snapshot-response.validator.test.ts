@@ -76,7 +76,7 @@ describe('SnapshotResponseValidator', () => {
 
     for (const body of malformedBodies) {
       // Act & Assert
-      expect(() => SnapshotResponseValidator.toSnapshot(body)).toThrow(/formato inesperado/)
+      expect(() => SnapshotResponseValidator.toSnapshot(body)).toThrow(/unexpected format/)
     }
   })
 })

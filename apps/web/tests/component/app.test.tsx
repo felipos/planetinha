@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FetchSnapshotUseCase } from '../../src/domain/usecases/fetch-snapshot.usecase'
 import { SelectPointUseCase } from '../../src/domain/usecases/select-point.usecase'
 import type { Snapshot } from '../../src/domain/models/snapshot'
-import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.fixture'
+import { mockEmptySnapshot, mockSnapshot } from '../fixtures/snapshot.mock'
 
 // jsdom implements neither WebGL nor canvas, and the globe's rendering is validated by running
 // the app. Here the globe is a placeholder so the surrounding states can be asserted.

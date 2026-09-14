@@ -1,13 +1,18 @@
 import { injectable } from 'tsyringe'
 import { AbortErrorDetector } from '../../domain/utils/abort-error'
 
-export interface HttpGetOptions {
+export type HttpMethod = 'GET' | 'POST'
+
+export interface HttpRequestOptions {
+  readonly method: HttpMethod
+  /** Query params for the request. The caller never assembles a query string by hand. */
+  readonly params?: Record<string, string | number>
   readonly signal?: AbortSignal
 }
 
 // Retry-on-429-with-backoff is a generic HTTP transport concern (interpreting `Retry-After`,
 // spacing out retries), not something specific to any one API — kept here so every data source
-// gets it for free through HttpClient instead of reimplementing it.
+// gets it for free through HttpClientService instead of reimplementing it.
 const MAX_RETRIES_ON_RATE_LIMIT = 4
 const INITIAL_BACKOFF_MS = 2_000
 const MAX_BACKOFF_MS = 20_000
@@ -53,24 +58,36 @@ function backoffWithJitter(attempt: number): number {
   return base + Math.random() * base * BACKOFF_JITTER_RATIO
 }
 
+function buildUrl(baseUrl: string, params?: Record<string, string | number>): string {
+  if (params === undefined) {
+    return baseUrl
+  }
+  const search = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)])),
+  )
+  return `${baseUrl}?${search.toString()}`
+}
+
 /**
  * Thin wrapper around `fetch`. Every data source that needs to make HTTP calls should go
- * through this instead of calling `fetch` directly, so retry/backoff-on-429 and abort handling
- * are consistent across every external API this app talks to.
+ * through this instead of calling `fetch` directly, so retry/backoff-on-429, abort handling, and
+ * query-string assembly are consistent across every external API this app talks to. The caller
+ * passes a base URL and its params, never an assembled URL.
  */
 @injectable()
-export class HttpClient {
-  async getJson<T>(url: string, options?: HttpGetOptions): Promise<T> {
-    const signal = options?.signal
+export class HttpClientService {
+  async request<T>(baseUrl: string, options: HttpRequestOptions): Promise<T> {
+    const url = buildUrl(baseUrl, options.params)
+    const signal = options.signal
     for (let attempt = 0; ; attempt += 1) {
       let response: Response
       try {
-        response = await fetch(url, { signal })
+        response = await fetch(url, { method: options.method, signal })
       } catch (error) {
         if (AbortErrorDetector.isAbortError(error)) {
           throw error
         }
-        throw new Error(`Não foi possível conectar a ${url}. Verifique sua conexão.`)
+        throw new Error(`Could not reach ${url}. Check your connection.`)
       }
 
       if (response.status === 429 && attempt < MAX_RETRIES_ON_RATE_LIMIT) {
@@ -80,7 +97,7 @@ export class HttpClient {
       }
 
       if (!response.ok) {
-        throw new Error(`A requisição a ${url} respondeu com erro (HTTP ${response.status}).`)
+        throw new Error(`The request to ${url} failed (HTTP ${response.status}).`)
       }
 
       return (await response.json()) as T

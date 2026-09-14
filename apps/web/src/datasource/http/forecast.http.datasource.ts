@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe'
 import type { Snapshot } from '../../domain/models/snapshot'
-import { HttpClient } from './http-client.service'
+import { HttpClientService } from './http-client.service'
 import { SnapshotResponseValidator } from './snapshot-response.validator'
 
 /**
@@ -21,11 +21,11 @@ const SNAPSHOT_PATH = '/api/snapshot'
  * prevent.
  */
 @injectable()
-export class PlanetinhaHttpDataSource {
-  constructor(private readonly httpClient: HttpClient) {}
+export class ForecastHttpDataSource {
+  constructor(private readonly httpClient: HttpClientService) {}
 
   async fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
-    const body = await this.httpClient.getJson<unknown>(SNAPSHOT_PATH, { signal })
+    const body = await this.httpClient.request<unknown>(SNAPSHOT_PATH, { method: 'GET', signal })
     return SnapshotResponseValidator.toSnapshot(body)
   }
 }
