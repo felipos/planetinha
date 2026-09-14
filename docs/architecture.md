@@ -1,18 +1,28 @@
 # Architecture Guide
 
 This document describes the project's architecture and the conventions to follow when implementing new features. Read it carefully before
-writing any code. See also `AGENTS.md` for the naming/comment/tooling rules referenced throughout.
+writing any code. See also `AGENTS.md` for the naming/comment/tooling rules referenced throughout, and `docs/running.md` for how to actually
+run the stack.
+
+The repo is a two-package workspace — `apps/web` (React frontend) and `apps/api` (Fastify + Postgres backend, with a worker sharing its
+codebase and image). **Both follow the same architecture**, described below once; the section _The api package_ at the end covers only where
+it differs.
 
 ---
 
 ## Overview
 
-The architecture is inspired by **Clean Architecture** (Robert C. Martin) and the **Ports & Adapters** (hexagonal) pattern. The core idea is
-simple: **business logic must not depend on external systems**. Infrastructure (fetch, the Open-Meteo API, Three.js, the DOM) depends on the
-domain — never the other way around.
+The architecture favors simplicity over indirection: a **presentation** layer that receives requests, a **domain** layer that holds business
+logic (models and use cases), and a **datasource** layer that is the only place allowed to reach an external system (a database, an HTTP
+API). There is no interface between a use case and the datasource it calls — a use case constructor-injects the concrete datasource class it
+needs and calls it directly. See `docs/adr/0005-drop-ports-for-direct-references.md` for why: the earlier ports-and-adapters design bought
+testability that a plain fake object already gives without an interface, at the cost of an extra file and an injection token for every
+dependency this project only ever wired to one real implementation.
 
-Dependency injection is handled by [tsyringe](https://github.com/microsoft/tsyringe). Domain, application, and infrastructure code is
-written as classes; React components and hooks are the one exception, since hooks require function components.
+Dependency injection is handled by [tsyringe](https://github.com/microsoft/tsyringe). Domain, datasource, and core code is written as
+classes; React components and hooks are the one exception, since hooks require function components. A class-typed constructor dependency
+needs no registration at all — tsyringe resolves it from the decorator metadata emitted for the constructor. The only reason a class needs
+an entry in `di-container.ts` is to be a **shared singleton** rather than a fresh instance per resolve.
 
 ---
 
@@ -20,37 +30,39 @@ written as classes; React components and hooks are the one exception, since hook
 
 ```
 src/
-├── domain/             # Business logic: models, validators, and state-shape types — zero framework knowledge
-│   └── utils/           # Stateless calculation/algorithm classes (color scale, interpolation, grid generation, ...)
-├── application/        # Use cases + ports (interfaces) + DI tokens
-│   └── ports/           # Interfaces implemented by infrastructure
-├── infrastructure/      # Concrete adapters: HttpClient, Env, Open-Meteo client, mock data source
-│   ├── open-meteo/
-│   └── mock/
-├── di-container.ts      # tsyringe container registration — the only file allowed to call container.register*
-└── presentation/        # React components and hooks (the only layer allowed to know about React/DOM)
+├── core/                # Cross-cutting, non-domain concerns: env access, logging, plain config
+├── domain/
+│   ├── models/           # Business logic data shapes: plain interfaces, validators, state-shape types
+│   ├── usecases/         # One class per operation — the business logic, calling datasources directly
+│   └── utils/             # Stateless calculation/algorithm classes (color scale, interpolation, grid generation, ...)
+├── datasource/
+│   ├── db/                # Direct database access, one class per table/entity (api only)
+│   └── http/               # Direct HTTP access: a shared HttpClientService, one class per external API
+├── di-container.ts        # tsyringe container registration — the only file allowed to call container.register*
+└── presentation/           # React components and hooks (the only layer allowed to know about React/DOM)
     ├── components/
     └── hooks/
 ```
 
 ### Dependency Rule
 
-Arrows below indicate the **allowed** direction of dependency. Inner layers never import from outer layers.
+Arrows below indicate the **allowed** direction of dependency. A use case may reference a datasource class directly — there is no interface
+to route through.
 
 ```
 presentation
-    └──> application
     └──> domain
 
-application
-    └──> domain
-    (defines ports + DI tokens; never imports a concrete infrastructure class)
+domain/usecases
+    └──> domain/models, domain/utils
+    └──> datasource/db, datasource/http
+    └──> core
 
-infrastructure
-    └──> application/ports  (implements the interface)
-    └──> domain
+datasource
+    └──> domain/models (for the shapes it returns)
+    └──> core (for Env, Logger, HttpClientService)
 
-domain
+domain/models, domain/utils
     (no outgoing dependencies on the other layers)
 ```
 
@@ -63,109 +75,74 @@ a fake use case and no container involved in tests.
 ## Naming Conventions
 
 See `AGENTS.md` for the full naming rules. In short: every directory and file is `kebab-case`, and a file that plays a specific
-architectural role carries a suffix naming that role — `*.use-case.ts`, `*.data-source.ts`, `*.port.ts`, `*.service.ts`, `*.validator.ts`,
-`*.hook.ts`, `*.component.tsx`. A CSS file paired with a component keeps the component's bare name, with no suffix. Plain domain value
-types/interfaces that aren't a "layer" (e.g. `temperature-reading.ts`) keep a bare kebab-case name.
+architectural role carries a suffix naming that role — `*.usecase.ts`, `*.datasource.ts`, `*.service.ts`, `*.validator.ts`, `*.entity.ts`
+(api only), `*.route.ts` (api only), `*.hook.ts`, `*.component.tsx`. A CSS file paired with a component keeps the component's bare name,
+with no suffix. Plain domain value types/interfaces that aren't a "layer" (e.g. `temperature-reading.ts`) keep a bare kebab-case name.
 
 ---
 
 ## Layers in Detail
 
+### `core/` — Cross-Cutting Concerns
+
+Nothing here is domain logic or business-specific: env access (`env.service.ts`, api only), logging (`logger.service.ts`, api only), and
+plain configuration constants/interfaces (`config.ts`, and `sweep-config.ts` on the api) — everything a use case or a datasource needs that
+isn't itself a domain concept.
+
+```typescript
+export class Env {
+  static get DATABASE_URL(): string {
+    return Env.required('DATABASE_URL')
+  }
+}
+```
+
 ### `domain/` — Business Logic
 
-The heart of the application. Has **zero knowledge** of `fetch`, Three.js, or the DOM.
+The heart of the application. Has **zero knowledge** of `fetch`, Postgres, Three.js, or the DOM.
 
-#### Models
+#### `models/` — plain data shapes
 
 Plain, `readonly` TypeScript interfaces representing domain entities — interfaces, not classes, since they're pure data shapes with no
 behavior. No serialization concerns, no framework types.
 
 ```typescript
 // ✅ Domain model — clean, no framework dependencies
-export interface TemperatureReading {
+export interface Forecast {
   readonly latitude: number
   readonly longitude: number
   readonly temperatureCelsius: number | null
-  readonly observedAt: string
+  readonly validAt: string
 }
 ```
+
+Domain types are named in the glossary's vocabulary (`CONTEXT.md`), and so are the fields on them. A type called `TemperatureReading` with
+an `observedAt` would be claiming something false: nothing observed these values, a weather model produced them.
 
 `null` is used explicitly to mean "no data available" and must never be conflated with a real value like `0`.
 
-#### `utils/` — calculation classes
+A validator over a domain model is a dedicated `*.validator.ts` file with a class of `static` methods, living in `utils/` alongside the rest
+of the stateless domain logic (`forecast.ts` in `models/` holds the `Forecast` interface; `forecast.validator.ts` in `utils/` holds
+`ForecastValidator`). A validator over a wire payload instead stays in the datasource that receives it — see `datasource/http/` below.
 
-Anything that isn't a plain data shape — algorithms, generators, formatters — is a class with `static` methods, not a module of loose
-exported functions, and lives under `domain/utils/` to keep it visually separate from the models/validators/state types at the `domain/`
-root. See `ColorScale` (`utils/color-scale.ts`), `TemperatureInterpolator` (`utils/interpolation.ts`), `GridPointsGenerator`
-(`utils/grid-points.ts`), `AbortErrorDetector` (`utils/abort-error.ts`). These take plain inputs and return plain outputs with no I/O, which
-makes them easy to unit test.
+State-shape types — discriminated unions that make illegal UI states unrepresentable — are also domain concepts and live in `models/` too —
+e.g. `DataFetchStatus` (`idle | loading | success | initial-load | partial-success | stale-error | hard-error`, where `initial-load` and
+`partial-success` are the same Coverage number meaning two different things). Model the edge cases explicitly instead of collapsing them
+into a single boolean `isLoading`/`error` pair.
 
-```typescript
-export class ColorScale {
-  static readonly TEMPERATURE_COLOR_STOPS: readonly ColorStop[] = [
-    /* ... */
-  ]
+#### `usecases/` — business logic
 
-  static temperatureToRgb(celsius: number): readonly [number, number, number] {
-    /* ... */
-  }
-}
-```
-
-#### Validators
-
-A validator is a dedicated `*.validator.ts` file with a class of `static` methods, separate from the model it validates
-(`temperature-reading.ts` holds the `TemperatureReading` interface; `temperature-reading.validator.ts` holds `TemperatureReadingValidator`).
-
-#### State-shape types
-
-Discriminated unions that make illegal UI states unrepresentable are also domain concepts — e.g. `DataFetchStatus`
-(`idle | loading | success | partial-success | stale-error | hard-error`). Model the edge cases explicitly instead of collapsing them into a
-single boolean `isLoading`/`error` pair.
-
----
-
-### `application/` — Use Cases, Ports, and Tokens
-
-Orchestrates domain logic without knowing which concrete infrastructure is behind a port.
-
-#### Ports
-
-An interface owned by `application` that `infrastructure` implements. This is the dependency-inversion seam: a use case only ever talks to
-the port, never to a concrete adapter.
-
-```typescript
-// ports/temperature-data-source.port.ts
-export interface TemperatureDataSourcePort {
-  fetchGrid(request: TemperatureGridRequest, signal?: AbortSignal): Promise<TemperatureGrid>
-}
-```
-
-#### Tokens
-
-Interfaces have no runtime representation, so a port-typed constructor dependency needs an injection token to register/resolve a concrete
-implementation against. All tokens live in one place, `src/application/tokens.ts`:
-
-```typescript
-export const TOKENS = {
-  TemperatureDataSourcePort: Symbol('TemperatureDataSourcePort'),
-} as const
-```
-
-#### Use cases
-
-A use case is an `@injectable()` class with an `execute()` method. Dependencies are constructor-injected — a port dependency via
-`@inject(TOKENS.X)`, a concrete class dependency with no decorator at all (tsyringe resolves concrete classes directly).
+A use case is an `@injectable()` class with an `execute()` method. Every constructor dependency — a datasource, another use case, a `core/`
+service — is a concrete class, constructor-injected with no decorator at all: tsyringe resolves a concrete class directly from its emitted
+decorator metadata.
 
 ```typescript
 @injectable()
-export class FetchTemperatureGridUseCase {
-  constructor(
-    @inject(TOKENS.TemperatureDataSourcePort) private readonly dataSource: TemperatureDataSourcePort,
-  ) {}
+export class FetchSnapshotUseCase {
+  constructor(private readonly dataSource: ForecastHttpDataSource) {}
 
-  execute(signal?: AbortSignal): Promise<TemperatureGrid> {
-    return this.dataSource.fetchGrid({ resolutionDegrees: DEFAULT_GRID_RESOLUTION_DEGREES }, signal)
+  execute(signal?: AbortSignal): Promise<Snapshot> {
+    return this.dataSource.fetchSnapshot(signal)
   }
 }
 ```
@@ -173,60 +150,42 @@ export class FetchTemperatureGridUseCase {
 Rules:
 
 - One use case = one operation.
-- A use case never imports a concrete `infrastructure` class — only ports and other injectable classes.
-- Config constants (`config.ts`) are imported directly rather than injected — they're plain values, not swappable dependencies.
+- A use case may hold basic validation/orchestration logic, but request parsing and response shaping stay in `presentation`.
+- Config constants (`core/config.ts`) are imported directly rather than injected — they're plain values, not swappable dependencies.
+
+#### `utils/` — calculation classes
+
+Anything that isn't a plain data shape — algorithms, generators, formatters — is a class with `static` methods, not a module of loose
+exported functions, and lives under `domain/utils/` to keep it visually separate from `models/` and `usecases/`. See `ColorScale`
+(`utils/color-scale.ts`), `CellLocator` (`utils/cell-locator.ts`), `CoverageCalculator` (`utils/coverage.ts`), `AbortErrorDetector`
+(`utils/abort-error.ts`). These take plain inputs and return plain outputs with no I/O, which makes them easy to unit test.
 
 ---
 
-### `infrastructure/` — Adapters and Services
+### `datasource/` — Direct Access to External Systems
 
-#### `HttpClient` (`http-client.service.ts`)
+The only layer allowed to reach outside the process. Grouped by transport, not by feature: `db/` for direct database access, `http/` for
+direct HTTP calls.
 
-Every data source that needs to make an HTTP call goes through this `@injectable()` class instead of calling `fetch` directly. It wraps
-`fetch` with retry-with-backoff on HTTP 429 and abort propagation — generic HTTP-transport concerns every data source gets for free. It
-knows nothing about any specific API's response shape; that stays in the data source.
+#### `datasource/http/`
 
-```typescript
-@injectable()
-export class HttpClient {
-  async getJson<T>(url: string, options?: HttpGetOptions): Promise<T> {
-    /* ... */
-  }
-}
-```
+`HttpClientService` (`http-client.service.ts`) is an `@injectable()` class every HTTP-calling datasource constructor-injects instead of
+calling `fetch` directly. Its one method, `request<T>(baseUrl, { method, params, signal, observer })`, wraps `fetch` with retry-with-backoff
+on HTTP 429, abort propagation, and query-string assembly — generic HTTP-transport concerns every datasource gets for free, including never
+having to assemble a URL by hand. It knows nothing about any specific API's response shape; that stays in the datasource.
 
-#### `Env` (`env.service.ts`)
-
-Typed, autocompletable access to environment variables. Never read `import.meta.env` directly anywhere else — add a static getter here
-instead:
-
-```typescript
-export class Env {
-  static get OPEN_METEO_FORECAST_URL(): string {
-    return /* import.meta.env.VITE_OPEN_METEO_FORECAST_URL, validated non-empty */
-  }
-}
-```
-
-Vite only exposes vars prefixed `VITE_` to client code, so `.env` stores `VITE_OPEN_METEO_FORECAST_URL` — the `Env` getter drops the prefix,
-since that's a Vite implementation detail the rest of the app shouldn't need to know about. `.env` is git-ignored; `.env.example` documents
-the required keys for onboarding. A new variable needs an entry in `.env.example`, a typed field in `src/vite-env.d.ts`, and a getter on
-`Env`.
-
-We don't use the `dotenv` npm package here: it reads `process.env` in Node and can't run in browser-bundled code, so it wouldn't do anything
-useful inside `Env`. Vite's own `.env` loading (which wraps `dotenv` internally, at build time) already covers this.
-
-#### Data sources
-
-Concrete `@injectable()` implementations of a port, grouped one subfolder per external dependency (`open-meteo/`, `mock/`),
-constructor-injecting `HttpClient` when they need it:
+A datasource is a concrete `@injectable()` class named after the external API it calls (e.g. `open-meteo.http.datasource.ts` →
+`OpenMeteoHttpDataSource`, api only), constructor-injecting `HttpClientService`:
 
 ```typescript
 @injectable()
-export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort {
-  constructor(private readonly httpClient: HttpClient) {}
+export class OpenMeteoHttpDataSource {
+  constructor(
+    private readonly httpClient: HttpClientService,
+    private readonly clock: Clock,
+  ) {}
 
-  async fetchGrid(request: TemperatureGridRequest, signal?: AbortSignal): Promise<TemperatureGrid> {
+  async fetchForecastWindow(gridPoints: readonly StoredGridPoint[]): Promise<FetchedForecastWindow> {
     /* ... */
   }
 }
@@ -234,33 +193,66 @@ export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort
 
 Rules:
 
-- Implement a port interface from `application/ports`.
-- Make every HTTP call through `HttpClient` — never call `fetch` directly.
-- Do all response parsing/mapping to domain models _inside_ the adapter. This project talks to a single small external API per port, so a
-  separate `datasources/` + `mappers/` split (as you'd want with many external APIs) would be premature — if a port grows multiple real
-  adapters with non-trivial response shapes, revisit this and extract mapping into dedicated files.
+- Make every HTTP call through `HttpClientService` — never call `fetch` directly, and never assemble a query string by hand; pass `params`
+  instead.
+- Do all response parsing/mapping to domain models _inside_ the datasource.
 - Throw a plain `Error` with a human-readable message on failure (see **Error Handling** below).
-- Respect the `AbortSignal` passed into every port method — this is what lets `presentation` cancel a stale fetch (e.g. React `StrictMode`'s
+- Respect the `AbortSignal` passed into every method — this is what lets `presentation` cancel a stale fetch (e.g. React `StrictMode`'s
   double-invoke in dev, or unmount) without wasting API quota.
 
-#### `di-container.ts`
+#### `datasource/db/` (api only)
 
-The only file allowed to call `container.register*`. Decides which concrete port implementation is wired in, based on
-`import.meta.env.MODE`:
+A datasource here is named after the **table it owns**, not after a use case — `forecasts.db.datasource.ts`, `grid-points.db.datasource.ts`,
+`sweeps.db.datasource.ts`. A use case that needs data spanning more than one table (e.g. `GetSnapshotUseCase` needs both Forecasts and the
+Sweep state) simply constructor-injects more than one datasource; nothing bundles them into a single repository, because "Snapshot" is a
+domain concept assembled in `domain/`, not a table.
 
 ```typescript
-export class DiContainer {
-  static setup(): void {
-    if (import.meta.env.MODE === 'mock') {
-      container.registerSingleton(TOKENS.TemperatureDataSourcePort, MockTemperatureDataSource)
-    } else {
-      container.registerSingleton(TOKENS.TemperatureDataSourcePort, OpenMeteoTemperatureDataSource)
-    }
+@injectable()
+export class ForecastsDbDataSource {
+  constructor(private readonly database: Database) {}
+
+  async findStoredForecasts(validAt: Date): Promise<readonly StoredSnapshotForecast[]> {
+    /* ... */
   }
 }
 ```
 
-`npm run dev:mock` runs Vite with `--mode mock`, which is all that's needed to switch adapters — no env vars required.
+`db/entities/` holds the Drizzle table definitions, one file per table (`*.entity.ts`), with `entities/schema.ts` re-exporting all of them
+for the Drizzle client and `drizzle-kit`. `database.service.ts` (the shared Postgres connection) lives directly under `datasource/db/`,
+shared by every table's datasource rather than duplicated. The boot check that used to live alongside it is now
+`VerifyDatabaseReadinessUseCase` in `domain/usecases/` — it constructor-injects `Database` like any other use case, since checking the
+database is business logic (deciding the process must not start), not a datasource concern.
+
+Rules:
+
+- A write that must be atomic is one method on the datasource that owns the transaction (e.g. `SweepsDbDataSource.commitSlice`), not several
+  calls the use case sequences. The Sweep cursor advancing and that Slice's Forecasts landing in the same transaction is what makes a crash
+  replay a Slice instead of losing it.
+- Anything Postgres-specific — SQLSTATE codes, `excluded.*` in an upsert, left joins that keep Grid Points with No Data — stays here.
+
+---
+
+### `di-container.ts`
+
+The only file allowed to call `container.register*`. Most classes need no entry here at all — a concrete constructor dependency resolves on
+its own. This file exists only for a class that must be a **shared singleton** rather than a fresh instance per resolve:
+
+```typescript
+export class DiContainer {
+  static setup(): void {
+    container.registerSingleton(Database)
+    container.registerSingleton(Logger)
+  }
+}
+```
+
+On the api, that's the one Postgres connection (`Database`) and the one Pino instance (`Logger`) the process uses. The frontend has neither
+a shared connection nor a shared logger, so it has no `di-container.ts` at all — `main.tsx` resolves its use cases straight from the
+container with zero registration required.
+
+A pacing value like `SweepConfig` is a plain object, not a class, so it is never resolved from the container either way — the worker builds
+it from `Env` and passes it straight into `AdvanceSweepUseCase`'s constructor (see _The api package_ below).
 
 ---
 
@@ -284,11 +276,11 @@ A non-hook, non-component helper module inside `presentation` still follows the 
 (`sphere-projection.ts`) and `HeatmapTexture` (`heatmap-texture.ts`) inside `components/globe/`, both plain classes with `static` methods.
 
 `src/main.tsx` (the composition root) resolves every use case the app needs from the container and passes them down as props
-(`fetchTemperatureGridUseCase`, `selectPointUseCase`) all the way to the hooks that use them:
+(`fetchSnapshotUseCase`, `selectPointUseCase`) all the way to the hooks that use them:
 
 ```typescript
 export function useSelectedPoint(
-  grid: TemperatureGrid | null,
+  snapshot: Snapshot | null,
   selectPointUseCase: SelectPointUseCase,
 ): UseSelectedPointResult {
   /* ... */
@@ -301,9 +293,9 @@ export function useSelectedPoint(
 
 This project does **not** use a `Result<T, E>` return type on every function. Instead:
 
-- Anything that can fail at the I/O boundary (an `infrastructure` adapter) throws a plain `Error` with a clear, user-facing message.
+- Anything that can fail at the I/O boundary (a `datasource` class) throws a plain `Error` with a clear, user-facing message.
 - The `presentation` layer (typically a hook) is the single place that catches these errors and translates them into an explicit state shape
-  — see `DataFetchStatus` in `src/domain/data-fetch-status.ts`.
+  — see `DataFetchStatus` in `src/domain/models/data-fetch-status.ts`.
 - `AbortErrorDetector.isAbortError()` detects an intentional cancellation and treats it as a no-op, not a failure.
 - A failure after a previous success does not wipe the UI: it becomes `stale-error`, keeping the last good data (`lastGood`) visible
   alongside the error message, instead of reverting to a blank/error screen.
@@ -311,13 +303,10 @@ This project does **not** use a `Result<T, E>` return type on every function. In
 ```typescript
 // ✅ Correct — throw at the boundary, convert to explicit state at the presentation edge
 @injectable()
-export class OpenMeteoTemperatureDataSource implements TemperatureDataSourcePort {
-  private async fetchBatch(points: readonly GridPoint[], signal?: AbortSignal) {
-    const body = await this.httpClient.getJson<unknown>(url, { signal })
-    if (isErrorResponse(body)) {
-      throw new Error(`A API de temperatura retornou um erro: ${body.reason}`)
-    }
-    // ...
+export class ForecastHttpDataSource {
+  async fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
+    const body = await this.httpClient.request<unknown>(SNAPSHOT_PATH, { method: 'GET', signal })
+    return SnapshotResponseValidator.toSnapshot(body) // throws a stated error on a malformed body
   }
 }
 ```
@@ -341,71 +330,134 @@ Suppose you need to add a new kind of data to the globe (e.g. wind speed) fetche
 
 ### 1. Add a domain model
 
-Create `src/domain/wind-reading.ts`:
+Create `src/domain/models/wind.ts` — named in the glossary's vocabulary, like every other domain type:
 
 ```typescript
-export interface WindReading {
+export interface Wind {
   readonly latitude: number
   readonly longitude: number
   readonly speedKmh: number | null
-  readonly observedAt: string
+  readonly validAt: string
 }
 ```
 
-### 2. Add a port and a token
+### 2. Create the use case
 
-Create `src/application/ports/wind-data-source.port.ts`:
+Create `src/domain/usecases/fetch-wind.usecase.ts` as an `@injectable()` class following the pattern in `fetch-snapshot.usecase.ts` —
+constructor-inject the datasource(s) it needs directly, expose `execute()`.
 
-```typescript
-export interface WindGridRequest {
-  readonly resolutionDegrees: number
-}
+### 3. Implement the datasource
 
-export interface WindDataSourcePort {
-  fetchGrid(request: WindGridRequest, signal?: AbortSignal): Promise<readonly WindReading[]>
-}
-```
+Create `src/datasource/http/<provider>.http.datasource.ts`, an `@injectable()` class named after the external API, constructor-injecting
+`HttpClientService` for the call and validating the response body before returning it.
 
-Add its token to `src/application/tokens.ts`:
+Note what does **not** happen here: the frontend does not gain a datasource for a weather provider directly. New data comes from
+Planetinha's own backend — see `docs/adr/0002-backend-is-the-sole-open-meteo-client.md`. On the api side, the provider-facing datasource is
+called only from the worker's path.
 
-```typescript
-export const TOKENS = {
-  TemperatureDataSourcePort: Symbol('TemperatureDataSourcePort'),
-  WindDataSourcePort: Symbol('WindDataSourcePort'),
-} as const
-```
+### 4. Wire it in the composition root
 
-### 3. Create the use case
+In `src/main.tsx`, resolve the new use case from the container and pass it down as a prop — the same way `fetchSnapshotUseCase` is passed to
+`<App />` today. No `di-container.ts` entry is needed unless the new datasource must be a shared singleton.
 
-Create `src/application/fetch-wind-grid.use-case.ts` as an `@injectable()` class following the pattern in
-`fetch-temperature-grid.use-case.ts` — inject the port via `@inject(TOKENS.WindDataSourcePort)`, expose `execute()`.
+### 5. Consume it from a hook
 
-### 4. Implement the adapter(s)
-
-Create `src/infrastructure/<provider>/<provider>-wind.data-source.ts`, an `@injectable()` class implementing `WindDataSourcePort`, injecting
-`HttpClient` for any HTTP calls. Add a mock counterpart in `src/infrastructure/mock/` if the UI needs to be developed without hitting the
-real API.
-
-### 5. Register it in the DI container
-
-In `src/di-container.ts`, register the port token against the real/mock adapter, the same way `TemperatureDataSourcePort` is registered
-today.
-
-### 6. Resolve and wire it in the composition root
-
-In `src/main.tsx`, resolve the new use case from the container and pass it down as a prop — the same way `fetchTemperatureGridUseCase` is
-passed to `<App />` today.
-
-### 7. Consume it from a hook
-
-Create `src/presentation/hooks/use-wind-grid.hook.ts` mirroring `use-temperature-grid.hook.ts`: receive the use case as a parameter, run it
-in a `useEffect` with an `AbortController`, and expose the result as an explicit state union (add a `kind` variant or a sibling type to
+Create `src/presentation/hooks/use-wind.hook.ts` mirroring `use-snapshot.hook.ts`: receive the use case as a parameter, run it in a
+`useEffect` with an `AbortController`, and expose the result as an explicit state union (add a `kind` variant or a sibling type to
 `DataFetchStatus`, whichever fits).
 
-### 8. Write tests
+### 6. Write tests
 
-- `tests/unit/` — domain classes and adapters, mocking `fetch` where needed (see `open-meteo-temperature.data-source.test.ts`).
+- `tests/unit/` — domain classes and datasources, mocking `fetch` where needed (see `snapshot-response.validator.test.ts`).
 - `tests/component/` — React Testing Library, rendering a component with a fake use case.
-- `tests/integration/` — a use case wired to a real (or mock) port end-to-end (see `fetch-temperature-grid.use-case.test.ts`).
+- `tests/integration/` — a use case wired to a fake datasource end-to-end (see `fetch-snapshot.usecase.test.ts`).
+
+A fake datasource is a plain object literal satisfying the concrete class's public shape, cast with `as unknown as <DatasourceClass>` —
+there's no interface to implement, so the cast is what lets a duck-typed fake stand in for the class type. See
+`createFakeForecastsDataSource` (api) or `createFakeDataSource` in `fetch-snapshot.usecase.test.ts` (web).
 
 ---
+
+## The api package
+
+`apps/api` follows everything above — the same layers, the same dependency rule, the same file-role suffixes — with the differences below
+and nothing else.
+
+### Where things go
+
+```
+apps/api/src/
+├── core/                 # Env, config.ts, sweep-config.ts, Logger
+├── domain/
+│   ├── models/            # Grid Point, Forecast, Sweep, Snapshot, TickOutcome + validators
+│   ├── usecases/          # GetSnapshotUseCase, AdvanceSweepUseCase, CheckHealthUseCase, VerifyDatabaseReadinessUseCase
+│   └── utils/
+├── datasource/
+│   ├── db/
+│   │   ├── entities/       # forecasts.entity.ts, grid-points.entity.ts, sweeps.entity.ts, schema.ts
+│   │   ├── database.service.ts
+│   │   ├── forecasts.db.datasource.ts
+│   │   ├── grid-points.db.datasource.ts
+│   │   └── sweeps.db.datasource.ts
+│   └── http/
+│       ├── http-client.service.ts
+│       └── open-meteo.http.datasource.ts  # The api's one door to the upstream weather provider
+├── presentation/routes/  # HTTP routes: request in, use case out, response back
+├── di-container.ts       # Registers Database and Logger as singletons — nothing else needs it
+├── server.ts              # Builds the Fastify instance WITHOUT listening — the test seam
+├── main.ts                # Entrypoint: the api
+├── sweep-worker.ts         # Entrypoint: the Sweep Worker
+└── scripts/                # migrate.ts, seed-grid.ts — run explicitly, never on boot
+```
+
+### Routes are the presentation layer
+
+A route translates an HTTP request into a use-case call and its result into a response body, and holds no logic of its own. The use case is
+**passed in**, not resolved, so a route can be exercised with a fake one and no container:
+
+```typescript
+export class SnapshotRoute {
+  static register(app: FastifyInstance, getSnapshotUseCase: GetSnapshotUseCase): void {
+    app.get('/api/snapshot', async () => SnapshotRoute.toResponse(await getSnapshotUseCase.execute()))
+  }
+}
+```
+
+`Server.build()` wires the routes and returns the instance without binding a port; binding is `main.ts`'s job. That split is what makes the
+read path testable through the real route.
+
+### Datasources are split by table, not by use case
+
+`GetSnapshotUseCase` constructor-injects both `ForecastsDbDataSource` and `SweepsDbDataSource`; `AdvanceSweepUseCase` constructor-injects
+`SweepsDbDataSource`, `GridPointsDbDataSource`, and `OpenMeteoHttpDataSource`. Nothing bundles these into a single repository per use case —
+each datasource answers only for the table it owns.
+
+### Testing
+
+Node's built-in runner (`node:test`), at three seams, all with no database and no network:
+
+- `tests/http/` — requests injected into the real Fastify instance with fake datasources. The highest seam available, and the one that would
+  catch a serialization or schema mistake.
+- `tests/integration/` — one Tick through the sweep use case, with a fake forecast source and fake datasources. The write path has no HTTP
+  surface, so the use case is as high as it goes.
+- `tests/unit/` — the upstream datasource with `fetch` mocked, and pure domain classes. This is where the provider's payload shape is pinned
+  down, which the fakes in the seam above cannot do.
+
+Fakes live in `tests/fixtures/` with the `*.mock.ts` suffix, and a fake models the real thing's _rules_ — the in-memory Sweeps fake keys
+Forecasts by (Grid Point, Valid At) exactly as the table does, so a replayed Slice overwrites there too.
+
+### The loader
+
+The package runs TypeScript through `@swc-node/register` and type-checks with `tsc --noEmit`. This is not a free choice: tsyringe resolves a
+concrete-class dependency from `emitDecoratorMetadata`, Node's native type stripping rejects decorators outright, and esbuild-based loaders
+run the code and then fail at **runtime** with an opaque resolution error. Read `docs/adr/0004-swc-register-required-by-tsyringe.md` before
+touching the loader, the test command, or the Dockerfile.
+
+### Two entrypoints, one image
+
+`main.ts` serves and `sweep-worker.ts` sweeps, from one codebase and one image, differing only by npm script. Exactly one process may call
+the weather provider — a Sweep Worker embedded in the api would multiply upstream traffic by the api's replica count — so **never** move
+provider-calling code into a route or a Fastify plugin.
+
+Both entrypoints fail fast at boot when the schema is missing or the Grid has not been seeded, with an instruction naming the step. Nothing
+migrates or seeds as a side effect of starting; both are explicit commands (see `docs/running.md`).

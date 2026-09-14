@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['**/dist', '**/node_modules', '.turbo']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -24,6 +24,16 @@ export default defineConfig([
       // Require braces on every control structure, even single-statement bodies.
       curly: ['error', 'all'],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    // The api package runs on Node, not in a browser, and has no React in it.
+    files: ['apps/api/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])
